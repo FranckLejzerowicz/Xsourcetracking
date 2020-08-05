@@ -35,7 +35,9 @@ def run_feast(
         p_rarefaction: int,
         diff_sources: bool,
         p_times: int) -> str:
+    """
 
+    """
     params = get_params(p_iterations_burnins, p_rarefaction, diff_sources)
 
     r_script = '%s_FEAST.R' % splitext(tab_out)[0]
@@ -45,7 +47,7 @@ def run_feast(
         for t in range(p_times):
             for cdx, chunk in enumerate(sink_samples_chunks):
                 n_sources = get_chunk_nsources(chunk, sources, counts)
-                r_meta = get_timechunk_meta(chunk, sink, sources, samples, n_sources)
+                r_meta = get_timechunk_meta(chunk, sink, sources, samples, n_sources, 'feast')
                 sams = '","'.join(r_meta['SampleID'].tolist())
                 r_o.write('samples <- c("%s")\n' % sams)
                 r_o.write('meta <- data.frame(Env=c("%s"), SourceSink=c("%s"), id=c(%s))\n' % (

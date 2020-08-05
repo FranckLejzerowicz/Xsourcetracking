@@ -85,3 +85,19 @@ def get_metadata(m_metadata: str, p_column_name: str,
     if verbose:
         print('done.')
     return metadata, p_column_name, sources, p_sink
+
+
+def get_sample_size(counts_dict: dict, p_size: float,
+                    sourcesink: str) -> int:
+    if p_size:
+        if 0 < p_size < 1:
+            sink_size = counts_dict[sourcesink] * p_size
+        elif p_size <= counts_dict[sourcesink]:
+            sink_size = p_size
+        else:
+            sink_size = counts_dict[sourcesink] * 0.5
+    else:
+        sink_size = counts_dict[sourcesink] * 0.5
+    return int(sink_size)
+
+

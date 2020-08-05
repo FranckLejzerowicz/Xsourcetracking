@@ -100,7 +100,7 @@ def xsourcetracking(
         )
     elif p_method == 'sourcetracker':
         cmd = run_sourcetracker(
-            tab,
+            tab_out,
             o_dir_path_meth,
             samples,
             counts,
@@ -109,7 +109,8 @@ def xsourcetracking(
             sink_samples_chunks,
             p_iterations_burnins,
             p_rarefaction,
-            p_cpus
+            p_cpus,
+            p_times
         )
     elif p_method == 'q2':
         cmd = run_q2classifier(
@@ -123,7 +124,6 @@ def xsourcetracking(
             p_rarefaction,
             p_cpus
         )
-
     elif p_method == 'metastorms':
         cmd = run_metastorms(
             tab,
