@@ -11,13 +11,6 @@ import pandas as pd
 from os.path import abspath, isdir, isfile
 
 
-def get_o_dir_path_meth(o_dir_path, p_method):
-    o_dir_path_meth = o_dir_path + '/' + p_method
-    if not isdir(o_dir_path_meth):
-        os.makedirs(o_dir_path_meth)
-    return o_dir_path_meth
-
-
 def write_data_table(tab, o_dir_path, raref):
     tab_out = '%s/tab%s.tsv' % (o_dir_path, raref)
     tab_reset = tab.reset_index()
@@ -36,12 +29,22 @@ def get_rarefaction(tab, p_rarefaction):
     return tab, raref
 
 
-def get_o_dir_path(o_dir_path, sink, sources) -> str:
-    o_dir_path = '%s/Snk-%s__Src-%s' % (
+def get_o_dir_path(o_dir_path, counts, sink, sources, p_method) -> str:
+    o_dir_path = '%s/Snk-%s%s__Src-%s/%s' % (
         abspath(o_dir_path),
-        sink.replace('/', '').replace('(', '').replace(')', '').replace(' ', ''),
-        '-'.join([source.replace('/', '').replace('(', '').replace(')', '').replace(' ', '') for source in sources])
+        counts[sink],
+        sink.replace('/', '').replace(
+            '(', '').replace(')', '').replace(
+            ' ', ''),
+        '-'.join(['%s%s' % (counts[source], source.replace(
+            '/', '').replace(
+            '(', '').replace(
+            ')', '').replace(
+            ' ', '')) for source in sources]),
+        p_method
     )
+    if not isdir(o_dir_path):
+        os.makedirs(o_dir_path)
     return o_dir_path
 
 

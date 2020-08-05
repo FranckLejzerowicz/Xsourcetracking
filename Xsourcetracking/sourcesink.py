@@ -53,8 +53,12 @@ def get_sink_samples_chunks(samples, sink, p_size, p_chunks):
 
 
 def get_sourcesink_dict(metadata, column_name, sink, sources):
+    counts = metadata[column_name].value_counts().to_dict()
     samples = {sink: metadata.loc[metadata[column_name] == sink, :].index.tolist()}
     for source in sources:
+        if counts[source] < 0.25 * counts[sink]:
+            del counts[source]
+            continue
         samples.update({source: metadata.loc[metadata[column_name] == source, :].index.tolist()})
-    counts = metadata[column_name].value_counts().to_dict()
-    return samples, counts
+    sources = [x for x in sources if x in counts]
+    return samples, counts, sources

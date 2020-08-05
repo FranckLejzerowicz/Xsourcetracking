@@ -82,7 +82,7 @@ from Xsourcetracking import __version__
 )
 @click.option(
     "-meth", "--p-method", required=False, default='feast',
-    type=click.Choice(['feast', 'sourcetracker', 'q2classifier', 'metastorms', 'classify']),
+    type=click.Choice(['feast', 'sourcetracker', 'q2', 'metastorms', 'classify']),
     help="Method for labeling check."
 )
 @click.option(

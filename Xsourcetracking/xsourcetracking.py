@@ -15,8 +15,7 @@ from Xsourcetracking.utils import (
     check_input_table,
     get_o_dir_path,
     get_rarefaction,
-    write_data_table,
-    get_o_dir_path_meth
+    write_data_table
 )
 from Xsourcetracking.sourcesink import get_sourcesink_dict, get_sink_samples_chunks
 
@@ -58,9 +57,6 @@ def xsourcetracking(
     metadata, column_name, sources, sink = get_metadata(
         m_metadata, p_column_name, p_sources, p_sink, verbose)
 
-    # create the output folder
-    o_dir_path = get_o_dir_path(o_dir_path, sink, sources)
-
     # filter for command line params
     tab, o_dir_path = get_filtered(
         p_column, p_column_value, p_filter_prevalence, p_filter_abundance,
@@ -75,11 +71,11 @@ def xsourcetracking(
     # write data to be used
     tab_out = write_data_table(tab, o_dir_path, raref)
 
-    # create the output folder for the selected method
-    o_dir_path_meth = get_o_dir_path_meth(o_dir_path, p_method)
-
     # get list of samples per sink / sources
-    samples, counts = get_sourcesink_dict(metadata, column_name, sink, sources)
+    samples, counts, sources = get_sourcesink_dict(metadata, column_name, sink, sources)
+
+    # create the output folder
+    o_dir_path_meth = get_o_dir_path(o_dir_path, counts, sink, sources, p_method)
 
     # get the sink samples broken down into sublists based on p_sink
     # (all sink samples must be vs. sources but not necessarily at once)
@@ -112,7 +108,7 @@ def xsourcetracking(
             p_rarefaction,
             p_cpus
         )
-    elif p_method == 'q2classifier':
+    elif p_method == 'q2':
         cmd = run_q2classifier(
             tab,
             o_dir_path_meth,

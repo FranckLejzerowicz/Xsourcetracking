@@ -63,10 +63,12 @@ def run_q2classifier(
         else:
             qza = qza_
 
-        for estimator in ['RandomForestClassifier',
-                          'GradientBoostingClassifier',
-                          'AdaBoostClassifier',
-                          'LinearSVC']:
+        for estimator in [
+            'RandomForestClassifier',
+            # 'GradientBoostingClassifier',
+            # 'AdaBoostClassifier',
+            # 'LinearSVC'
+        ]:
             o_dir_path_meth_est = o_dir_path_meth + '/%s/c%s' % (estimator, cdx)
             if isdir(o_dir_path_meth_est):
                 subprocess.call(['rm', '-rf', o_dir_path_meth_est])
