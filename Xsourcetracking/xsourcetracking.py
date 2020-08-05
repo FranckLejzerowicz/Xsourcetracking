@@ -73,6 +73,9 @@ def xsourcetracking(
 
     # get list of samples per sink / sources
     samples, counts, sources = get_sourcesink_dict(metadata, column_name, sink, sources)
+    if len(counts) == 1:
+        print('Not enough source(s) samples')
+        sys.exit(0)
 
     # create the output folder
     o_dir_path_meth = get_o_dir_path(o_dir_path, counts, sink, sources, p_method)
