@@ -6,11 +6,60 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
+import os
 import pandas as pd
+from os.path import abspath, isdir, isfile
+
+
+def get_o_dir_path_meth(o_dir_path, p_method):
+    o_dir_path_meth = o_dir_path + '/' + p_method
+    if not isdir(o_dir_path_meth):
+        os.makedirs(o_dir_path_meth)
+    return o_dir_path_meth
+
+
+def write_data_table(tab, o_dir_path, raref):
+    tab_out = '%s/tab%s.tsv' % (o_dir_path, raref)
+    tab_reset = tab.reset_index()
+    tab_reset = tab_reset.rename(columns={tab_reset.columns.tolist()[0]: 'featureid'})
+    tab_reset.to_csv(tab_out, index=False, sep='\t')
+    return tab_out
+
+
+def get_rarefaction(tab, p_rarefaction):
+    raref = ''
+    if p_rarefaction:
+        raref = '_raref%s' % p_rarefaction
+        tab = tab.loc[:, tab.sum() > p_rarefaction]
+    else:
+        tab = tab.loc[:, tab.sum() > 1000]
+    return tab, raref
+
+
+def get_o_dir_path(o_dir_path, sink, sources) -> str:
+    o_dir_path = '%s/Snk-%s__Src-%s' % (
+        abspath(o_dir_path),
+        sink.replace('/', '').replace('(', '').replace(')', '').replace(' ', ''),
+        '-'.join([source.replace('/', '').replace('(', '').replace(')', '').replace(' ', '') for source in sources])
+    )
+    return o_dir_path
+
+
+def check_input_table(i_table: str, verbose: bool) -> (str, pd.DataFrame):
+    i_table = abspath(i_table)
+    if not isfile(i_table):
+        raise IOError("No input table found at %s" % i_table)
+    if verbose:
+        print('read')
+    tab = pd.read_csv(i_table, header=0, index_col=0, sep='\t')
+    return i_table, tab
 
 
 def get_metadata(m_metadata: str, p_column_name: str,
-                 p_sources: tuple, p_sink: str) -> (pd.DataFrame, str, list, str):
+                 p_sources: tuple, p_sink: str,
+                 verbose: bool) -> (pd.DataFrame, str, list, str):
+    if verbose:
+        print('Read metadata...', end='')
     with open(m_metadata) as f:
         for line in f:
             break
@@ -30,4 +79,6 @@ def get_metadata(m_metadata: str, p_column_name: str,
             sources.append(p_source)
     else:
         sources = [x for x in metadata_factors if str(x) not in ['nan', p_sink]]
+    if verbose:
+        print('done.')
     return metadata, p_column_name, sources, p_sink

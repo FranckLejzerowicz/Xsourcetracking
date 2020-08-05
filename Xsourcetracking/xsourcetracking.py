@@ -6,15 +6,25 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
-import os
 import sys
 import subprocess
-import pandas as pd
-from os.path import abspath, isfile, isdir
 
-from Xsourcetracking.filter import do_filter
-from Xsourcetracking.utils import get_metadata
-from Xsourcetracking.run import run_feast, run_sourcetracker, run_classify
+from Xsourcetracking.filter import get_filtered
+from Xsourcetracking.utils import (
+    get_metadata,
+    check_input_table,
+    get_o_dir_path,
+    get_rarefaction,
+    write_data_table,
+    get_o_dir_path_meth
+)
+from Xsourcetracking.sourcesink import get_sourcesink_dict, get_sink_samples_chunks
+
+from Xsourcetracking.feast import run_feast
+from Xsourcetracking.sourcetracker import run_sourcetracker
+from Xsourcetracking.classify import run_classify
+from Xsourcetracking.metastorms import run_metastorms
+from Xsourcetracking.q2classifier import run_q2classifier
 
 
 def xsourcetracking(
@@ -34,94 +44,100 @@ def xsourcetracking(
         p_rarefaction: int,
         p_method: str,
         p_cpus: int,
+        p_size: int,
+        p_chunks: int,
+        p_times: int,
         diff_sources: bool,
         verbose: bool,
         third_party: bool):
 
-    i_table = abspath(i_table)
-    if not isfile(i_table):
-        raise IOError("No input table found at %s" % i_table)
-    if verbose:
-        print('read')
-    tab = pd.read_csv(i_table, header=0, index_col=0, sep='\t')
+    # check and read input table
+    i_table, tab = check_input_table(i_table, verbose)
 
-    if verbose:
-        print('Read metadata...', end='')
-    metadata, column_name, sources, sink = get_metadata(m_metadata, p_column_name, p_sources, p_sink)
-    if verbose:
-        print('done.')
+    # read metadata and collect sink / sources
+    metadata, column_name, sources, sink = get_metadata(
+        m_metadata, p_column_name, p_sources, p_sink, verbose)
 
-    o_dir_path = '%s/Snk-%s__Src-%s' % (
-        abspath(o_dir_path),
-        sink.replace('/', '').replace('(', '').replace(')', '').replace(' ', ''),
-        '-'.join([source.replace('/', '').replace('(', '').replace(')', '').replace(' ', '') for source in sources])
-    )
+    # create the output folder
+    o_dir_path = get_o_dir_path(o_dir_path, sink, sources)
 
-    message = 'input'
-    if p_column:
-        if p_column_value or p_filter_prevalence or p_filter_abundance or p_column_quant:
-            tab = do_filter(tab, metadata, p_filter_prevalence,
-                            p_filter_abundance, p_filter_order,
-                            p_column, p_column_value, p_column_quant)
-            message = 'filtered'
-            o_dir_path = o_dir_path + '/c-%s' % p_column
-            if p_filter_prevalence:
-                o_dir_path = o_dir_path + '-' + '-'.join(p_column_value)
-            if p_filter_prevalence:
-                o_dir_path = o_dir_path + '_p-' + str(p_filter_prevalence)
-            if p_filter_prevalence:
-                o_dir_path = o_dir_path + '_a-' + str(p_filter_abundance)
-            if p_filter_prevalence:
-                o_dir_path = o_dir_path + '_q-' + str(p_column_quant)
-    if tab.shape[0] < 10:
-        raise IOError('Too few features in the %s table' % message)
+    # filter for command line params
+    tab, o_dir_path = get_filtered(
+        p_column, p_column_value, p_filter_prevalence, p_filter_abundance,
+        p_filter_order, p_column_quant, tab, metadata, o_dir_path)
 
-    if not isdir(o_dir_path):
-        os.makedirs(o_dir_path)
+    # filter for min rarefaction depth
+    tab, raref = get_rarefaction(tab, p_rarefaction)
 
-    raref = ''
-    if p_rarefaction:
-        raref = '_raref%s' % p_rarefaction
-        tab = tab.loc[:, tab.sum() > p_rarefaction]
-    else:
-        tab = tab.loc[:, tab.sum() > 1000]
+    # subset metadata to filtered samples
+    metadata = metadata.set_index('sample_name').loc[tab.columns.tolist(), [column_name]]
 
-    samples = tab.columns.tolist()
-    metadata = metadata.set_index('sample_name').loc[samples, [column_name]]
+    # write data to be used
+    tab_out = write_data_table(tab, o_dir_path, raref)
 
-    tab_out = '%s/tab%s.tsv' % (o_dir_path, raref)
-    tab = tab.reset_index()
-    tab = tab.rename(columns={tab.columns.tolist()[0]: 'featureid'})
-    tab.to_csv(tab_out, index=False, sep='\t')
+    # create the output folder for the selected method
+    o_dir_path_meth = get_o_dir_path_meth(o_dir_path, p_method)
 
-    o_dir_path_meth = o_dir_path + '/' + p_method
-    if not isdir(o_dir_path_meth):
-        os.makedirs(o_dir_path_meth)
+    # get list of samples per sink / sources
+    samples, counts = get_sourcesink_dict(metadata, column_name, sink, sources)
+
+    # get the sink samples broken down into sublists based on p_sink
+    # (all sink samples must be vs. sources but not necessarily at once)
+    sink_samples_chunks = get_sink_samples_chunks(samples, sink, p_size, p_chunks)
 
     if p_method == 'feast':
         cmd = run_feast(
             tab_out,
             o_dir_path_meth,
-            metadata,
-            column_name,
+            samples,
+            counts,
             sources,
             sink,
+            sink_samples_chunks,
             p_iterations_burnins,
             p_rarefaction,
-            diff_sources
+            diff_sources,
+            p_times
         )
-
     elif p_method == 'sourcetracker':
         cmd = run_sourcetracker(
-            tab_out,
+            tab,
             o_dir_path_meth,
-            metadata,
-            column_name,
+            samples,
+            counts,
             sources,
             sink,
+            sink_samples_chunks,
             p_iterations_burnins,
             p_rarefaction,
-            p_cpus,
+            p_cpus
+        )
+    elif p_method == 'q2classifier':
+        cmd = run_q2classifier(
+            tab,
+            o_dir_path_meth,
+            samples,
+            counts,
+            sources,
+            sink,
+            sink_samples_chunks,
+            p_rarefaction,
+            p_cpus
+        )
+
+    elif p_method == 'metastorms':
+        cmd = run_metastorms(
+            tab,
+            tab_out,
+            o_dir_path_meth,
+            samples,
+            counts,
+            sources,
+            sink,
+            sink_samples_chunks,
+            p_iterations_burnins,
+            p_rarefaction,
+            p_cpus
         )
     elif p_method == 'classify':
         cmd = run_classify(
@@ -135,8 +151,8 @@ def xsourcetracking(
             p_iterations_burnins,
             p_rarefaction,
             p_cpus,
+            p_times
         )
-    else:
         sys.exit(1)
     if third_party:
         sh = open('%s/cmd.sh' % o_dir_path, 'w')

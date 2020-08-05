@@ -82,12 +82,24 @@ from Xsourcetracking import __version__
 )
 @click.option(
     "-meth", "--p-method", required=False, default='feast',
-    type=click.Choice(['feast', 'sourcetracker', 'classify']),
+    type=click.Choice(['feast', 'sourcetracker', 'q2classifier', 'metastorms', 'classify']),
     help="Method for labeling check."
 )
 @click.option(
     "-j", "--p-cpus", required=False, default=1, type=int,
     help="[sourcetracker] Number of cpus/jobs."
+)
+@click.option(
+    "-s", "--p-size", required=False, default=None, type=float,
+    help="Percent / Number of samples per prediction."
+)
+@click.option(
+    "-h", "--p-chunks", required=False, default=None, type=int,
+    help="Number of chunks to split the sink samples into."
+)
+@click.option(
+    "-t", "--p-times", required=False, type=int, default=1,
+    help="[feast/sourcetracker] number of times to make selections."
 )
 @click.option(
     "--diff-sources", "--no-diff-sources", default=False,
@@ -104,7 +116,7 @@ from Xsourcetracking import __version__
     "--verbose/--no-verbose", default=False
 )
 @click.version_option(__version__, prog_name="Xsourcetracking")
-def standalone_xsourcetracking(
+def standalone_xsourcetracking  (
         i_table,
         o_dir_path,
         m_metadata,
@@ -121,6 +133,9 @@ def standalone_xsourcetracking(
         p_rarefaction,
         p_method,
         p_cpus,
+        p_size,
+        p_chunks,
+        p_times,
         diff_sources,
         verbose,
         third_party
@@ -143,6 +158,9 @@ def standalone_xsourcetracking(
         p_rarefaction,
         p_method,
         p_cpus,
+        p_size,
+        p_chunks,
+        p_times,
         diff_sources,
         verbose,
         third_party

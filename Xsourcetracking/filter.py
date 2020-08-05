@@ -6,7 +6,9 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
+import os
 import pandas as pd
+from os.path import isdir
 
 
 def num_filter(otu: pd.DataFrame,
@@ -156,3 +158,28 @@ def do_filter(tab: pd.DataFrame,
             tab = cat_filter(tab, metadata, p_column, p_column_value, p_column_quant)
     return tab
 
+
+def get_filtered(p_column: str, p_column_value, p_filter_prevalence,
+                 p_filter_abundance, p_filter_order, p_column_quant,
+                 tab, metadata, o_dir_path):
+    message = 'input'
+    if p_column:
+        if p_column_value or p_filter_prevalence or p_filter_abundance or p_column_quant:
+            tab = do_filter(tab, metadata, p_filter_prevalence,
+                            p_filter_abundance, p_filter_order,
+                            p_column, p_column_value, p_column_quant)
+            message = 'filtered'
+            o_dir_path = o_dir_path + '/c-%s' % p_column
+            if p_filter_prevalence:
+                o_dir_path = o_dir_path + '-' + '-'.join(p_column_value)
+            if p_filter_prevalence:
+                o_dir_path = o_dir_path + '_p-' + str(p_filter_prevalence)
+            if p_filter_prevalence:
+                o_dir_path = o_dir_path + '_a-' + str(p_filter_abundance)
+            if p_filter_prevalence:
+                o_dir_path = o_dir_path + '_q-' + str(p_column_quant)
+    if tab.shape[0] < 10:
+        raise IOError('Too few features in the %s table' % message)
+    if not isdir(o_dir_path):
+        os.makedirs(o_dir_path)
+    return tab, o_dir_path
