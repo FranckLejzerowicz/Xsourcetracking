@@ -56,7 +56,7 @@ def get_sourcesink_dict(metadata, column_name, sink, sources):
     counts = metadata[column_name].value_counts().to_dict()
     samples = {sink: metadata.loc[metadata[column_name] == sink, :].index.tolist()}
     for source in sources:
-        if counts[source] < 0.25 * counts[sink]:
+        if counts[source] < 20:
             del counts[source]
             continue
         samples.update({source: metadata.loc[metadata[column_name] == source, :].index.tolist()})
