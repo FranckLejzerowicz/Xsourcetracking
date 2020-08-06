@@ -35,26 +35,14 @@ def run_sourcetracker(
     for t in range(p_times):
         for cdx, chunk in enumerate(sink_samples_chunks):
             n_sources = get_chunk_nsources(chunk, sources, counts)
-            r_meta = get_timechunk_meta(chunk, sink, sources, samples, n_sources, 'feast')
-
-            # for sidx, sam in enumerate(chunk):
-            #     map_list.append([sam, 'sink', '%s %s' % (sink, (sidx + 1))])
-            #     cur_sams.append(sam)
-            # for source in sources:
-            #     n_source = n_sources[source]
-            #     for sodx, sam in enumerate(random.sample(samples[source], n_source)):
-            #         map_list.append([sam, 'source', '%s %s' % (source, (sodx + 1))])
-            #         cur_sams.append(sam)
-            # map_pd = pd.DataFrame(map_list, columns=['#SampleID', 'SourceSink', 'Env'])
+            r_meta = get_timechunk_meta(chunk, sink, sources, samples, n_sources, 'sourcetracker')
 
             map_out = '%s/map.t%s.c%s.tsv' % (o_dir_path_meth, t, cdx)
             r_meta.to_csv(map_out, index=False, sep='\t')
 
-            cur_qza = '%s/tab.t%s.c%s.qza' % (o_dir_path_meth, t, cdx)
-            cur_biom = '%s/tab.t%s.c%s.biom' % (o_dir_path_meth, t, cdx)
-            # cur_tab = tab.loc[:, r_meta['#SampleID']].copy()
-            # cur_tab = cur_tab.loc[cur_tab.sum(1) > 0, ]
-            # cur_tab.reset_index().to_csv(cur_tab_out, index=False, sep='\t')
+            cur = '%s/tab.t%s.c%s' % (o_dir_path_meth, t, cdx)
+            cur_qza = '%s.qza' % cur
+            cur_biom = '%s.biom' % cur
 
             cur_p_cpus = p_cpus
             if p_cpus > len(chunk):
@@ -67,8 +55,9 @@ def run_sourcetracker(
 
             cmd += 'qiime tools export'
             cmd += ' --input-path %s' % cur_qza
-            cmd += ' --output-path %s' % cur_biom
-            cmd += ' --to-tsv\n'
+            cmd += ' --output-path %s\n' % cur
+
+            cmd += 'mv %s/* %s\n' % (cur, cur_biom)
 
             # o_dir_path_meth_prop = o_dir_path_meth + '/prop_c%s' % cdx
             # if isdir(o_dir_path_meth_prop):
@@ -87,7 +76,8 @@ def run_sourcetracker(
             o_dir_path_meth_loo = o_dir_path_meth + '/loo_c%s' % cdx
             if isdir(o_dir_path_meth_loo):
                 subprocess.call(['rm', '-rf', o_dir_path_meth_loo])
-            cmd += 'sourcetracker2 gibbs'
+
+            cmd += 'sourcetracker2'
             cmd += ' -i %s' % cur_biom
             cmd += ' -m %s' % map_out
             if p_rarefaction:
@@ -99,6 +89,6 @@ def run_sourcetracker(
             cmd += ' --jobs %s' % cur_p_cpus
             cmd += ' -o %s/\n' % o_dir_path_meth_loo
 
-            cmd += 'rm -o %s %s %s\n' % (cur_qza, cur_biom, map_out)
+            cmd += 'rm -rf %s %s %s %s\n' % (cur_qza, cur_biom, map_out, cur)
 
     return cmd

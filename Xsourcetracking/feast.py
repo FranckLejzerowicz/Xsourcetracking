@@ -35,12 +35,9 @@ def run_feast(
         p_rarefaction: int,
         diff_sources: bool,
         p_times: int) -> str:
-    """
 
-    """
     params = get_params(p_iterations_burnins, p_rarefaction, diff_sources)
-
-    r_script = '%s_FEAST.R' % splitext(tab_out)[0]
+    r_script = '%s/run_feast.R' % o_dir_path_meth
     with open(r_script, 'w') as r_o:
         r_o.write('library(FEAST)\n')
         r_o.write('feats_full <- Load_CountMatrix(CountMatrix_path="%s")\n' % tab_out)

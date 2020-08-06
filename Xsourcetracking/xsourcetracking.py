@@ -68,9 +68,6 @@ def xsourcetracking(
     # subset metadata to filtered samples
     metadata = metadata.set_index('sample_name').loc[tab.columns.tolist(), [column_name]]
 
-    # write data to be used
-    tab_out = write_data_table(tab, o_dir_path, raref)
-
     # get list of samples per sink / sources
     samples, counts, sources = get_sourcesink_dict(metadata, column_name, sink, sources)
     if len(counts) == 1:
@@ -78,7 +75,10 @@ def xsourcetracking(
         sys.exit(0)
 
     # create the output folder
-    o_dir_path_meth = get_o_dir_path(o_dir_path, counts, sink, sources, p_method)
+    o_dir_path, o_dir_path_meth = get_o_dir_path(o_dir_path, counts, sink, sources, p_method)
+
+    # write data to be used
+    tab_out = write_data_table(tab, samples, o_dir_path, raref)
 
     # get the sink samples broken down into sublists based on p_sink
     # (all sink samples must be vs. sources but not necessarily at once)

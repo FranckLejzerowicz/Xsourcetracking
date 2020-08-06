@@ -11,11 +11,14 @@ import pandas as pd
 from os.path import abspath, isdir, isfile
 
 
-def write_data_table(tab, o_dir_path, raref):
+def write_data_table(tab, samples, o_dir_path, raref):
     tab_out = '%s/tab%s.tsv' % (o_dir_path, raref)
-    tab_reset = tab.reset_index()
-    tab_reset = tab_reset.rename(columns={tab_reset.columns.tolist()[0]: 'featureid'})
-    tab_reset.to_csv(tab_out, index=False, sep='\t')
+    all_samples = set([s for sam in samples.values() for s in sam])
+    if not isfile(tab_out):
+        tab = tab[list(all_samples)]
+        tab_reset = tab.reset_index()
+        tab_reset = tab_reset.rename(columns={tab_reset.columns.tolist()[0]: 'featureid'})
+        tab_reset.to_csv(tab_out, index=False, sep='\t')
     return tab_out
 
 
@@ -29,8 +32,8 @@ def get_rarefaction(tab, p_rarefaction):
     return tab, raref
 
 
-def get_o_dir_path(o_dir_path, counts, sink, sources, p_method) -> str:
-    o_dir_path = '%s/Snk-%s%s__Src-%s/%s' % (
+def get_o_dir_path(o_dir_path, counts, sink, sources, p_method) -> (str, str):
+    o_dir_path = '%s/Snk-%s%s__Src-%s' % (
         abspath(o_dir_path),
         counts[sink],
         sink.replace('/', '').replace(
@@ -40,12 +43,12 @@ def get_o_dir_path(o_dir_path, counts, sink, sources, p_method) -> str:
             '/', '').replace(
             '(', '').replace(
             ')', '').replace(
-            ' ', '')) for source in sources]),
-        p_method
+            ' ', '')) for source in sources])
     )
-    if not isdir(o_dir_path):
-        os.makedirs(o_dir_path)
-    return o_dir_path
+    o_dir_path_meth = o_dir_path + '/' + p_method
+    if not isdir(o_dir_path_meth):
+        os.makedirs(o_dir_path_meth)
+    return o_dir_path, o_dir_path_meth
 
 
 def check_input_table(i_table: str, verbose: bool) -> (str, pd.DataFrame):
@@ -85,19 +88,3 @@ def get_metadata(m_metadata: str, p_column_name: str,
     if verbose:
         print('done.')
     return metadata, p_column_name, sources, p_sink
-
-
-def get_sample_size(counts_dict: dict, p_size: float,
-                    sourcesink: str) -> int:
-    if p_size:
-        if 0 < p_size < 1:
-            sink_size = counts_dict[sourcesink] * p_size
-        elif p_size <= counts_dict[sourcesink]:
-            sink_size = p_size
-        else:
-            sink_size = counts_dict[sourcesink] * 0.5
-    else:
-        sink_size = counts_dict[sourcesink] * 0.5
-    return int(sink_size)
-
-
