@@ -8,38 +8,10 @@
 
 import os
 import subprocess
-import numpy as np
 from os.path import isdir, isfile, splitext
 
+from Xsourcetracking.utils import get_chunks
 from Xsourcetracking.sourcesink import get_chunk_nsources, get_timechunk_meta
-
-
-def get_chunks(samples, sink, p_chunks, p_size) -> list:
-    nsink = len(samples[sink])
-    if p_chunks:
-        if nsink / p_chunks < 100:
-            N = 2
-        else:
-            N = p_chunks
-    elif p_size:
-        if 0 < p_size < 1:
-            n = nsink * p_size
-        else:
-            n = p_size
-        if n < 100:
-            N = 2
-        else:
-            N = nsink / n
-    else:
-        for r in range(2, 9):
-            if nsink / r < 100:
-                N = r
-                break
-        else:
-            N = 2
-    idx = np.digitize(range(nsink), bins=np.linspace(0, nsink, int(N), False))
-    chunks = [[s for sdx, s in enumerate(samples[sink]) if idx[sdx] == i] for i in range(1, int(N) + 1)]
-    return chunks
 
 
 def run_q2classifier(
@@ -67,7 +39,7 @@ def run_q2classifier(
     for t in range(p_times):
         chunks_set = get_chunks(samples, sink, p_chunks, p_size)
         for r in range(len(chunks_set)):
-            chunks = chunks_set[:r] + chunks_set[r:]
+            chunks = chunks_set[(r+1):] + chunks_set[:(r+1)]
             chunks = [chunks[0], [c for chunk in chunks[1:] for c in chunk]]
             for cdx, chunk in enumerate(chunks):
 
@@ -84,7 +56,7 @@ def run_q2classifier(
                         for c in chunk:
                             o.write('%s\t%s\n' % (c, sink))
                 else:
-                    o_dir_path_meth_tr = o_dir_path_meth + '/t%s/train_chunk%s' % (t, r)
+                    o_dir_path_meth_tr = o_dir_path_meth + '/t%s/r%s' % (t, r)
                     if isdir(o_dir_path_meth_tr):
                         subprocess.call(['rm', '-rf', o_dir_path_meth_tr])
                     os.makedirs(o_dir_path_meth_tr)

@@ -7,23 +7,52 @@
 # ----------------------------------------------------------------------------
 
 import os
+import numpy as np
 import pandas as pd
 from os.path import abspath, isdir, isfile
 
 
+def get_chunks(samples, sink, p_chunks, p_size) -> list:
+    nsink = len(samples[sink])
+    if p_chunks:
+        if nsink / p_chunks < 100:
+            N = 2
+        else:
+            N = p_chunks
+    elif p_size:
+        if 0 < p_size < 1:
+            n = nsink * p_size
+        else:
+            n = p_size
+        if n < 100:
+            N = 2
+        else:
+            N = nsink / n
+    else:
+        for r in range(2, 9):
+            if nsink / r < 100:
+                N = r
+                break
+        else:
+            N = 2
+    idx = np.digitize(range(nsink), bins=np.linspace(0, nsink, int(N), False))
+    chunks = [[s for sdx, s in enumerate(samples[sink]) if idx[sdx] == i] for i in range(1, int(N) + 1)]
+    return chunks
+
+
 def write_data_table(tab, samples, o_dir_path, raref, meth):
 
-    if meth == 'sourcetracker':
-        tab_out = '%s/tab%s_st.tsv' % (o_dir_path, raref)
-    else:
-        tab_out = '%s/tab%s.tsv' % (o_dir_path, raref)
+    # if meth == 'sourcetracker':
+    #     tab_out = '%s/tab%s_st.tsv' % (o_dir_path, raref)
+    # else:
+    tab_out = '%s/tab%s.tsv' % (o_dir_path, raref)
     all_samples = set([s for sam in samples.values() for s in sam])
     if not isfile(tab_out):
         tab = tab[list(all_samples)]
         tab_reset = tab.reset_index()
         tab_reset = tab_reset.rename(columns={tab_reset.columns.tolist()[0]: 'featureid'})
-        if meth == 'sourcetracker':
-            tab_reset.columns = ['s%s' % x for x in tab_reset.columns]
+        # if meth == 'sourcetracker':
+        #     tab_reset.columns = ['s%s' % x for idx, x in enumerate(tab_reset.columns) if idx]
         tab_reset.to_csv(tab_out, index=False, sep='\t')
     return tab_out
 
