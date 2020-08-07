@@ -14,31 +14,19 @@ from os.path import isdir, splitext
 from sklearn.model_selection import train_test_split
 
 
-def get_sample_size(counts_dict: dict, p_size: float,
-                    sourcesink: str) -> int:
-    if p_size:
-        if 0 < p_size < 1:
-            sink_size = counts_dict[sourcesink] * p_size
-        elif p_size <= counts_dict[sourcesink]:
-            sink_size = p_size
-        else:
-            sink_size = counts_dict[sourcesink] * 0.5
-    else:
-        sink_size = counts_dict[sourcesink] * 0.5
-    return int(sink_size)
-
-
 def run_classify(
-        tab: pd.DataFrame,
         tab_out: str,
         o_dir_path_meth: str,
         meta: pd.DataFrame,
         column: str,
         sources: tuple,
         sink: str,
+        p_size,
+        p_chunks,
         p_iterations_burnins: int,
         p_rarefaction: int,
-        p_cpus: int):
+        p_cpus: int,
+        p_times: int) -> str:
 
 
     # stratifier = meta[column].values

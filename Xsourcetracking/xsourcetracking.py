@@ -127,7 +127,6 @@ def xsourcetracking(
         )
     elif p_method == 'metastorms':
         cmd = run_metastorms(
-            tab,
             tab_out,
             o_dir_path_meth,
             samples,
@@ -138,11 +137,11 @@ def xsourcetracking(
             p_chunks,
             p_iterations_burnins,
             p_rarefaction,
-            p_cpus
+            p_cpus,
+            p_times
         )
     elif p_method == 'classify':
         cmd = run_classify(
-            tab,
             tab_out,
             o_dir_path_meth,
             metadata,
@@ -156,7 +155,6 @@ def xsourcetracking(
             p_cpus,
             p_times
         )
-        sys.exit(1)
 
     script = '%s/cmd_%s.sh' % (o_dir_path_meth, p_method)
     sh = open(script, 'w')
