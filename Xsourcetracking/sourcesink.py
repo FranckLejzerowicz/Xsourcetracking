@@ -44,7 +44,7 @@ def get_timechunk_meta(chunk, sink, sources, samples, n_sources, meth):
     if meth == 'feast':
         r_meta = pd.DataFrame(r_meta_list, columns=['SampleID', 'Env', 'SourceSink', 'id'])
     elif meth == 'sourcetracker':
-        r_meta = pd.DataFrame(r_meta_list, columns=['#SampleID', 'Env', 'SourceSink'])
+        r_meta = pd.DataFrame(r_meta_list, columns=['#SampleID', 'SourceSink', 'Env'])
     elif meth == 'q2':
         r_meta = pd.DataFrame(r_meta_list, columns=['#SampleID', 'Env'])
     return r_meta
