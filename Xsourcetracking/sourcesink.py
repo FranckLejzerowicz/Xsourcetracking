@@ -26,9 +26,9 @@ def get_timechunk_meta(chunk, sink, sources, samples, n_sources, meth):
     r_meta_list = []
     for sdx, sam in enumerate(chunk):
         if meth == 'feast':
-            r_meta_list.append([sam, '%s %s' % (sink, (sdx + 1)), 'Sink', (sdx + 1)])
+            r_meta_list.append([sam, '%s%s' % (sink, (sdx + 1)), 'Sink', (sdx + 1)])
         elif meth == 'sourcetracker':
-            r_meta_list.append([sam, '%s %s' % (sink, (sdx + 1)), 'sink'])
+            r_meta_list.append([sam, '%s%s' % (sink, (sdx + 1)), 'sink'])
         elif meth == 'q2':
             r_meta_list.append([sam, sink])
     for sodx, source in enumerate(sources):

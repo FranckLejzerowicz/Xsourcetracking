@@ -8,8 +8,7 @@
 
 from os.path import splitext
 from Xsourcetracking.sourcesink import (
-    get_chunk_nsources, get_timechunk_meta,
-    get_sourcesink_dict, get_sink_samples_chunks
+    get_chunk_nsources, get_timechunk_meta, get_sink_samples_chunks
 )
 
 

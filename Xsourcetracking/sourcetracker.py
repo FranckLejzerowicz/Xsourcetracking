@@ -12,11 +12,10 @@ import pandas as pd
 from os.path import isdir, isfile, splitext
 
 from Xsourcetracking.utils import get_chunks
-from Xsourcetracking.sourcesink import get_chunk_nsources, get_timechunk_meta, get_sink_samples_chunks
+from Xsourcetracking.sourcesink import get_chunk_nsources, get_timechunk_meta
 
 
 def run_sourcetracker(
-        tab: pd.DataFrame,
         tab_out: str,
         o_dir_path_meth: str,
         samples: dict,
@@ -29,10 +28,6 @@ def run_sourcetracker(
         p_rarefaction: int,
         p_cpus: int,
         p_times: int) -> str:
-
-    # get the sink samples broken down into sublists based on p_sink
-    # (all sink samples must be vs. sources but not necessarily at once)
-    sink_samples_chunks = get_sink_samples_chunks(samples, sink, p_size, p_chunks)
 
     cmd = 'conda activate st2\n'
     biom = '%s.biom' % splitext(tab_out)[0]

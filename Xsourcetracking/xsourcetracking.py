@@ -98,7 +98,6 @@ def xsourcetracking(
         )
     elif p_method == 'sourcetracker':
         cmd = run_sourcetracker(
-            tab,
             tab_out,
             o_dir_path_meth,
             samples,
