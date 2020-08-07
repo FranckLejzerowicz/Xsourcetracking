@@ -7,7 +7,10 @@
 # ----------------------------------------------------------------------------
 
 from os.path import splitext
-from Xsourcetracking.sourcesink import get_chunk_nsources, get_timechunk_meta
+from Xsourcetracking.sourcesink import (
+    get_chunk_nsources, get_timechunk_meta,
+    get_sourcesink_dict, get_sink_samples_chunks
+)
 
 
 def get_params(p_iterations_burnins, p_rarefaction, diff_sources):
@@ -30,11 +33,16 @@ def run_feast(
         counts: dict,
         sources: tuple,
         sink: str,
-        sink_samples_chunks: list,
+        p_size: int,
+        p_chunks: int,
         p_iterations_burnins: int,
         p_rarefaction: int,
         diff_sources: bool,
         p_times: int) -> str:
+
+    # get the sink samples broken down into sublists based on p_sink
+    # (all sink samples must be vs. sources but not necessarily at once)
+    sink_samples_chunks = get_sink_samples_chunks(samples, sink, p_size, p_chunks)
 
     params = get_params(p_iterations_burnins, p_rarefaction, diff_sources)
     r_script = '%s/run_feast.R' % o_dir_path_meth
@@ -57,5 +65,5 @@ def run_feast(
                 r_o.write('feat <- feats_full[,colSums(feats_full)>0]\n' % ())
                 r_o.write('o.t%s.c%s <- FEAST(C=feat, metadata=meta, dir_path="%s", outfile="o.t%s.c%s"%s)\n' % (
                     t, cdx, o_dir_path_meth, t, cdx, params))
-        cmd = 'R -f %s --vanilla' % r_script
+        cmd = 'conda activate feast\nR -f %s --vanilla' % r_script
     return cmd

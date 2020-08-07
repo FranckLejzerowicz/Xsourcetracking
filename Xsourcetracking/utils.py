@@ -51,19 +51,47 @@ def get_o_dir_path(o_dir_path, counts, sink, sources, p_method) -> (str, str):
     return o_dir_path, o_dir_path_meth
 
 
-def check_input_table(i_table: str, verbose: bool) -> (str, pd.DataFrame):
+def get_o_dir_paths(o_dir_path, column_name, sink,
+                    sources, p_sources, p_method) -> (str, str):
+    o_dir_path = '%s/%s-%s' % (
+        abspath(o_dir_path),
+        column_name,
+        sink.replace(
+            '/', '').replace(
+            '(', '').replace(
+            ')', '').replace(
+            ' ', '')
+    )
+    if p_sources:
+        o_dir_path = '%s_%s' % (
+            o_dir_path,
+            '_'.join([source.replace(
+                '/', '').replace(
+                '(', '').replace(
+                ')', '').replace(
+                ' ', '') for source in sources])
+        )
+    o_dir_path_meth = o_dir_path + '/' + p_method
+    if not isdir(o_dir_path_meth):
+        os.makedirs(o_dir_path_meth)
+    return o_dir_path, o_dir_path_meth
+
+
+def check_input_table(i_table: str, verbose: bool, meth: str) -> (str, pd.DataFrame):
     i_table = abspath(i_table)
     if not isfile(i_table):
         raise IOError("No input table found at %s" % i_table)
     if verbose:
         print('read')
     tab = pd.read_csv(i_table, header=0, index_col=0, sep='\t')
+    if meth == 'sourcetracker':
+        tab.columns = ['s%s' % x for x in tab.columns]
     return i_table, tab
 
 
 def get_metadata(m_metadata: str, p_column_name: str,
                  p_sources: tuple, p_sink: str,
-                 verbose: bool) -> (pd.DataFrame, str, list, str):
+                 verbose: bool, meth: str) -> (pd.DataFrame, str, list, str):
     if verbose:
         print('Read metadata...', end='')
     with open(m_metadata) as f:
@@ -71,6 +99,8 @@ def get_metadata(m_metadata: str, p_column_name: str,
             break
     metadata = pd.read_csv(m_metadata, header=0, sep='\t', dtype={line.split('\t')[0]: str})
     metadata = metadata.rename(columns={metadata.columns.tolist()[0]: 'sample_name'})
+    if meth == 'sourcetracker':
+        metadata['sample_name'] = ['s%s' % x for x in metadata['sample_name']]
     metadata.columns = [x.replace('\n', '') for x in metadata.columns]
     if p_column_name not in metadata.columns.tolist()[1:]:
         raise IOError('"%s" not in "%s"' % (p_column_name, m_metadata))

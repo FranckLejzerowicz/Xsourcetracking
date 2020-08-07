@@ -7,106 +7,180 @@
 # ----------------------------------------------------------------------------
 
 import os
-import random
 import subprocess
-import pandas as pd
-from os.path import isdir, splitext
+import numpy as np
+from os.path import isdir, isfile, splitext
 
-from Xsourcetracking.sourcesink import get_chunk_nsources
+from Xsourcetracking.sourcesink import get_chunk_nsources, get_timechunk_meta
+
+
+def get_chunks(samples, sink, p_chunks, p_size) -> list:
+    nsink = len(samples[sink])
+    if p_chunks:
+        if nsink / p_chunks < 100:
+            N = 2
+        else:
+            N = p_chunks
+    elif p_size:
+        if 0 < p_size < 1:
+            n = nsink * p_size
+        else:
+            n = p_size
+        if n < 100:
+            N = 2
+        else:
+            N = nsink / n
+    else:
+        for r in range(2, 9):
+            if nsink / r < 100:
+                N = r
+                break
+        else:
+            N = 2
+    idx = np.digitize(range(nsink), bins=np.linspace(0, nsink, int(N), False))
+    chunks = [[s for sdx, s in enumerate(samples[sink]) if idx[sdx] == i] for i in range(1, int(N) + 1)]
+    return chunks
 
 
 def run_q2classifier(
-        tab: pd.DataFrame,
+        tab_out: str,
         o_dir_path_meth: str,
         samples: dict,
         counts: dict,
         sources: tuple,
         sink: str,
-        sink_samples_chunks: list,
+        p_size: int,
+        p_chunks: int,
         p_rarefaction: int,
-        p_cpus: int):
+        p_cpus: int,
+        p_times: int) -> str:
+
+    res = []
 
     cmd = ''
-    for cdx, chunk in enumerate(sink_samples_chunks):
-        map_list = []
-        cur_sams = []
-        for sidx, sam in enumerate(chunk):
-            map_list.append([sam, sink])
-            cur_sams.append(sam)
-        cur_p_cpus = p_cpus
-        if p_cpus > sidx:
-            cur_p_cpus = sidx
-        n_sources = get_chunk_nsources(chunk, sources, counts)
-        for source in sources:
-            n_source = n_sources[source]
-            for sodx, sam in enumerate(random.sample(samples[source], n_source)):
-                map_list.append([sam, source])
-                cur_sams.append(sam)
-        map_pd = pd.DataFrame(map_list, columns=['#SampleID', 'Env'])
-        map_out = '%s/map.c%s.tsv' % (o_dir_path_meth, cdx)
-        map_pd.to_csv(map_out, index=False, sep='\t')
-        cur_tab = tab.loc[:, cur_sams].copy()
-        cur_tab = cur_tab.loc[cur_tab.sum(1) > 0, ]
-        tsv = '%s/tab.c%s.tsv' % (o_dir_path_meth, cdx)
-        cur_tab.reset_index().to_csv(tsv, index=False, sep='\t')
+    biom = '%s.biom' % splitext(tab_out)[0]
+    qza = '%s.qza' % splitext(tab_out)[0]
+    if not isfile(qza):
+        cmd += 'biom convert -i %s -o %s --to-hdf5 --table-type="OTU table"\n' % (tab_out, biom)
+        cmd += 'qiime tools import --input-path %s --output-path %s --type FeatureTable[Frequency]\n' % (biom, qza)
 
-        rad = splitext(tsv)[0]
-        biom = '%s.biom' % rad
-        qza_ = '%s.qza' % rad
-        cmd += 'biom convert -i %s -o %s --to-hdf5 --table-type="OTU table"\n' % (tsv, biom)
-        cmd += 'qiime tools import --input-path %s --output-path %s --type FeatureTable[Frequency]\n' % (biom, qza_)
-        if p_rarefaction:
-            cmd += 'qiime feature-table rarefy --i-table %s \\\n' % qza_
-            cmd += '--p-sampling-depth 1000 \\\n'
-            cmd += '--o-rarefied-table %s_raref1000.qza\n' % rad
-            qza = '%s_raref1000.qza' % rad
-        else:
-            qza = qza_
+    for t in range(p_times):
+        chunks_set = get_chunks(samples, sink, p_chunks, p_size)
+        for r in range(len(chunks_set)):
+            chunks = chunks_set[:r] + chunks_set[r:]
+            chunks = [chunks[0], [c for chunk in chunks[1:] for c in chunk]]
+            for cdx, chunk in enumerate(chunks):
 
-        for estimator in [
-            'RandomForestClassifier',
-            # 'GradientBoostingClassifier',
-            # 'AdaBoostClassifier',
-            # 'LinearSVC'
-        ]:
-            o_dir_path_meth_est = o_dir_path_meth + '/%s/c%s' % (estimator, cdx)
-            if isdir(o_dir_path_meth_est):
-                subprocess.call(['rm', '-rf', o_dir_path_meth_est])
-            os.makedirs(o_dir_path_meth_est)
+                cur_p_cpus = p_cpus
+                if p_cpus > len(chunk):
+                    cur_p_cpus = len(chunk)
 
-            cmd += 'qiime sample-classifier classify-samples \\\n'
-            cmd += ' --i-table %s \\\n' % qza
-            cmd += ' --m-metadata-file %s \\\n' % map_out
-            cmd += ' --m-metadata-column Env \\\n'
-            cmd += ' --p-cv 1 \\\n'
-            cmd += ' --p-n-jobs %s \\\n' % cur_p_cpus
-            cmd += ' --p-estimator %s \\\n' % estimator
-            sample_estimator = '%s/sample_estimator.qza' % o_dir_path_meth_est
-            cmd += ' --o-sample-estimator %s \\\n' % sample_estimator
-            feature_importance = '%s/feature_importance.qza' % o_dir_path_meth_est
-            cmd += ' --o-feature-importance %s \\\n' % feature_importance
-            predictions = '%s/predictions.qza' % o_dir_path_meth_est
-            cmd += ' --o-predictions %s \\\n' % predictions
-            model_summary = '%s/model_summary.qza' % o_dir_path_meth_est
-            cmd += ' --o-model-summary %s \\\n' % model_summary
-            accuracy_results = '%s/accuracy_results.qzv' % o_dir_path_meth_est
-            cmd += ' --o-accuracy-results %s \\\n' % accuracy_results
-            probabilities = '%s/probabilities.qza' % o_dir_path_meth_est
-            cmd += ' --o-probabilities %s \\\n' % probabilities
-            heatmap = '%s/heatmap.qzv' % o_dir_path_meth_est
-            cmd += ' --o-heatmap %s\n' % heatmap
+                if cdx:
+                    # to predict
+                    cur = '%s/tab.pred' % o_dir_path_meth_tr
+                    map_out = '%s/map.pred.tsv' % o_dir_path_meth_tr
+                    with open(map_out, 'w') as o:
+                        o.write('#SampleID\tEnv\n')
+                        for c in chunk:
+                            o.write('%s\t%s\n' % (c, sink))
+                else:
+                    o_dir_path_meth_tr = o_dir_path_meth + '/t%s/train_chunk%s' % (t, r)
+                    if isdir(o_dir_path_meth_tr):
+                        subprocess.call(['rm', '-rf', o_dir_path_meth_tr])
+                    os.makedirs(o_dir_path_meth_tr)
 
-            feature_importance_d = splitext(feature_importance)[0]
-            cmd += 'qiime tools export --input-path %s --output-path %s\n' % (feature_importance, feature_importance_d)
-            cmd += 'mv  %s/* %s.tsv\n' % (feature_importance_d, feature_importance_d)
-            predictions_d = splitext(predictions)[0]
-            cmd += 'qiime tools export --input-path %s --output-path %s\n' % (predictions, predictions_d)
-            cmd += 'mv  %s/* %s.tsv\n' % (predictions_d, predictions_d)
-            probabilities_d = splitext(probabilities)[0]
-            cmd += 'qiime tools export --input-path %s --output-path %s\n' % (probabilities, probabilities_d)
-            cmd += 'mv  %s/* %s.tsv\n' % (probabilities_d, probabilities_d)
-            cmd += 'rm -rf %s %s %s %s %s %s %s %s %s\n\n\n' % (biom, qza, sample_estimator, feature_importance,
-                                                       predictions, probabilities, feature_importance_d, predictions_d,
-                                                       probabilities_d)
+                    # model
+                    cur = '%s/tab.model' % o_dir_path_meth_tr
+                    map_out = '%s/map.model.tsv' % o_dir_path_meth_tr
+                    n_sources = get_chunk_nsources(chunk, sources, counts)
+                    r_meta = get_timechunk_meta(chunk, sink, sources, samples, n_sources, 'q2')
+                    r_meta.to_csv(map_out, index=False, sep='\t')
 
+                cur_qza_ = '%s.qza' % cur
+                cmd += 'qiime feature-table filter-samples'
+                cmd += ' --i-table %s' % qza
+                cmd += ' --m-metadata-file %s' % map_out
+                cmd += ' --o-filtered-table %s\n' % cur_qza_
+
+                if p_rarefaction:
+                    cmd += 'qiime feature-table rarefy'
+                    cmd += ' --i-table %s' % cur_qza_
+                    cmd += ' --p-sampling-depth 1000'
+                    cmd += ' --o-rarefied-table %s_raref1000.qza\n' % cur
+                    cur_qza = '%s_raref1000.qza' % cur
+                else:
+                    cur_qza = cur_qza_
+
+                for estimator in [
+                    'RandomForestClassifier',
+                    # 'GradientBoostingClassifier',
+                    # 'AdaBoostClassifier',
+                    # 'LinearSVC'
+                ]:
+
+                    o_dir_path_meth_est = o_dir_path_meth_tr + '/%s' % estimator
+                    if isdir(o_dir_path_meth_est):
+                        subprocess.call(['rm', '-rf', o_dir_path_meth_est])
+                    os.makedirs(o_dir_path_meth_est)
+
+                    if cdx:
+                        cur_predictions = '%s/predictions.qza' % o_dir_path_meth_est
+                        cur_probabilities = '%s/probabilities.qza' % o_dir_path_meth_est
+                        cur_predictions_d = splitext(cur_predictions)[0]
+                        cur_probabilities_d = splitext(cur_probabilities)[0]
+
+                        res.append([
+                            t, r,
+                            '%s.tsv' % cur_predictions_d,
+                            '%s.tsv' % cur_probabilities_d,
+                        ])
+
+                        cmd += 'qiime sample-classifier predict-classification'
+                        cmd += ' --i-table %s' % cur_qza
+                        cmd += ' --i-sample-estimator %s' % sample_estimator
+                        cmd += ' --p-n-jobs %s' % cur_p_cpus
+                        cmd += ' --o-predictions %s' % cur_predictions
+                        cmd += ' --o-probabilities %s\n' % cur_probabilities
+                        cmd += 'qiime tools export --input-path %s --output-path %s\n' % (
+                            cur_predictions, cur_predictions_d)
+                        cmd += 'mv  %s/* %s.tsv\n' % (cur_predictions_d, cur_predictions_d)
+                        cmd += 'qiime tools export --input-path %s --output-path %s\n' % (
+                            cur_probabilities, cur_probabilities_d)
+                        cmd += 'mv  %s/* %s.tsv\n' % (cur_probabilities_d, cur_probabilities_d)
+                        cmd += 'rm -rf %s %s %s %s\n' % (cur_predictions, cur_predictions_d,
+                                                             cur_probabilities, cur_probabilities_d)
+                    else:
+                        sample_estimator = '%s/sample_estimator.qza' % o_dir_path_meth_est
+                        feature_importance = '%s/feature_importance.qza' % o_dir_path_meth_est
+                        model_summary = '%s/model_summary.qzv' % o_dir_path_meth_est
+                        predictions = '%s/predictions.qza' % o_dir_path_meth_est
+                        accuracy_results = '%s/accuracy_results.qzv' % o_dir_path_meth_est
+                        probabilities = '%s/probabilities.qza' % o_dir_path_meth_est
+                        heatmap = '%s/heatmap.qzv' % o_dir_path_meth_est
+                        accuracy_results_d = splitext(accuracy_results)[0]
+
+                        cmd += 'qiime sample-classifier classify-samples'
+                        cmd += ' --i-table %s' % cur_qza
+                        cmd += ' --m-metadata-file %s' % map_out
+                        cmd += ' --m-metadata-column Env'
+                        cmd += ' --p-cv 1'
+                        cmd += ' --p-n-jobs %s' % cur_p_cpus
+                        cmd += ' --p-estimator %s' % estimator
+                        cmd += ' --o-sample-estimator %s' % sample_estimator
+                        cmd += ' --o-feature-importance %s' % feature_importance
+                        cmd += ' --o-predictions %s' % predictions
+                        cmd += ' --o-model-summary %s' % model_summary
+                        cmd += ' --o-accuracy-results %s' % accuracy_results
+                        cmd += ' --o-probabilities %s' % probabilities
+                        cmd += ' --o-heatmap %s\n' % heatmap
+
+                        cmd += 'qiime tools export --input-path %s --output-path %s\n' % (
+                            accuracy_results, accuracy_results_d)
+                        cmd += 'mv  %s/predictions.pdf %s_confusion.pdf\n' % (accuracy_results_d, accuracy_results_d)
+                        cmd += 'mv  %s/roc_plot.pdf %s_roc.pdf\n' % (accuracy_results_d, accuracy_results_d)
+                        cmd += 'tail -n 3 %s/predictive_accuracy.tsv > %s.tsv\n' % (accuracy_results_d, accuracy_results_d)
+
+                        cmd += 'rm -rf %s %s %s %s %s\n' % (feature_importance, predictions, probabilities,
+                                                          accuracy_results, accuracy_results_d)
+                cmd += 'rm -rf %s %s\n' % (map_out, cur_qza)
     return cmd

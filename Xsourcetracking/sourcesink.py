@@ -28,17 +28,24 @@ def get_timechunk_meta(chunk, sink, sources, samples, n_sources, meth):
         if meth == 'feast':
             r_meta_list.append([sam, '%s %s' % (sink, (sdx + 1)), 'Sink', (sdx + 1)])
         elif meth == 'sourcetracker':
-            r_meta_list.append([sam, 'sink', '%s %s' % (sink, (sdx + 1))])
+            r_meta_list.append([sam, '%s %s' % (sink, (sdx + 1)), 'sink'])
+        elif meth == 'q2':
+            r_meta_list.append([sam, sink])
     for sodx, source in enumerate(sources):
         for sadx, sam in enumerate(random.sample(samples[source], n_sources[source])):
             if meth == 'feast':
                 r_meta_list.append([sam, '%s %s' % (source, (sadx + 1)), 'Source', sodx])
             elif meth == 'sourcetracker':
-                r_meta_list.append([sam, 'source', '%s %s' % (source, (sadx + 1))])
+                r_meta_list.append([sam, source, 'source'])
+                # r_meta_list.append([sam, 'source', '%s %s' % (source, (sadx + 1))])
+            elif meth == 'q2':
+                r_meta_list.append([sam, source])
     if meth == 'feast':
         r_meta = pd.DataFrame(r_meta_list, columns=['SampleID', 'Env', 'SourceSink', 'id'])
     elif meth == 'sourcetracker':
-        r_meta = pd.DataFrame(r_meta_list, columns=['#SampleID', 'SourceSink', 'Env'])
+        r_meta = pd.DataFrame(r_meta_list, columns=['#SampleID', 'Env', 'SourceSink'])
+    elif meth == 'q2':
+        r_meta = pd.DataFrame(r_meta_list, columns=['#SampleID', 'Env'])
     return r_meta
 
 

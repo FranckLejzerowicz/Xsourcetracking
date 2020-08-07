@@ -13,11 +13,11 @@ from Xsourcetracking.filter import get_filtered
 from Xsourcetracking.utils import (
     get_metadata,
     check_input_table,
-    get_o_dir_path,
+    get_o_dir_paths,
     get_rarefaction,
     write_data_table
 )
-from Xsourcetracking.sourcesink import get_sourcesink_dict, get_sink_samples_chunks
+from Xsourcetracking.sourcesink import get_sourcesink_dict
 
 from Xsourcetracking.feast import run_feast
 from Xsourcetracking.sourcetracker import run_sourcetracker
@@ -48,14 +48,14 @@ def xsourcetracking(
         p_times: int,
         diff_sources: bool,
         verbose: bool,
-        third_party: bool):
+        run: bool):
 
     # check and read input table
-    i_table, tab = check_input_table(i_table, verbose)
+    i_table, tab = check_input_table(i_table, verbose, p_method)
 
     # read metadata and collect sink / sources
     metadata, column_name, sources, sink = get_metadata(
-        m_metadata, p_column_name, p_sources, p_sink, verbose)
+        m_metadata, p_column_name, p_sources, p_sink, verbose, meth)
 
     # filter for command line params
     tab, o_dir_path = get_filtered(
@@ -75,14 +75,11 @@ def xsourcetracking(
         sys.exit(0)
 
     # create the output folder
-    o_dir_path, o_dir_path_meth = get_o_dir_path(o_dir_path, counts, sink, sources, p_method)
+    o_dir_path, o_dir_path_meth = get_o_dir_paths(o_dir_path, column_name, sink,
+                                                  sources, p_sources, p_method)
 
     # write data to be used
     tab_out = write_data_table(tab, samples, o_dir_path, raref)
-
-    # get the sink samples broken down into sublists based on p_sink
-    # (all sink samples must be vs. sources but not necessarily at once)
-    sink_samples_chunks = get_sink_samples_chunks(samples, sink, p_size, p_chunks)
 
     if p_method == 'feast':
         cmd = run_feast(
@@ -92,7 +89,8 @@ def xsourcetracking(
             counts,
             sources,
             sink,
-            sink_samples_chunks,
+            p_size,
+            p_chunks,
             p_iterations_burnins,
             p_rarefaction,
             diff_sources,
@@ -106,7 +104,8 @@ def xsourcetracking(
             counts,
             sources,
             sink,
-            sink_samples_chunks,
+            p_size,
+            p_chunks,
             p_iterations_burnins,
             p_rarefaction,
             p_cpus,
@@ -114,15 +113,17 @@ def xsourcetracking(
         )
     elif p_method == 'q2':
         cmd = run_q2classifier(
-            tab,
+            tab_out,
             o_dir_path_meth,
             samples,
             counts,
             sources,
             sink,
-            sink_samples_chunks,
+            p_size,
+            p_chunks,
             p_rarefaction,
-            p_cpus
+            p_cpus,
+            p_times
         )
     elif p_method == 'metastorms':
         cmd = run_metastorms(
@@ -133,7 +134,8 @@ def xsourcetracking(
             counts,
             sources,
             sink,
-            sink_samples_chunks,
+            p_size,
+            p_chunks,
             p_iterations_burnins,
             p_rarefaction,
             p_cpus
@@ -147,16 +149,18 @@ def xsourcetracking(
             column_name,
             sources,
             sink,
+            p_size,
+            p_chunks,
             p_iterations_burnins,
             p_rarefaction,
             p_cpus,
             p_times
         )
         sys.exit(1)
-    if third_party:
-        sh = open('%s/cmd.sh' % o_dir_path, 'w')
-        sh.write('%s\n' % cmd)
-        sh.close()
-    else:
-        subprocess.call(cmd)
-    print(cmd)
+
+    script = '%s/cmd_%s.sh' % (o_dir_path_meth, p_method)
+    sh = open(script, 'w')
+    sh.write('%s\n' % cmd)
+    sh.close()
+    if run:
+        subprocess.call(['sh', script])

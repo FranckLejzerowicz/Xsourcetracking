@@ -108,9 +108,9 @@ from Xsourcetracking import __version__
          "to each sink, do not set otherwise."
 )
 @click.option(
-    "--third-party", "--no-third-party", default=True,
-    help="Whether the command line shall be written and not run "
-         "(i.e. to bee run by a third party handler)"
+    "--run", "--no-run", default=False,
+    help="Whether the commands should be run "
+         "(e.g. or to be used by a third party handler)"
 )
 @click.option(
     "--verbose/--no-verbose", default=False
@@ -138,7 +138,7 @@ def standalone_xsourcetracking  (
         p_times,
         diff_sources,
         verbose,
-        third_party
+        run
 ):
 
     xsourcetracking(
@@ -163,7 +163,7 @@ def standalone_xsourcetracking  (
         p_times,
         diff_sources,
         verbose,
-        third_party
+        run
     )
 
 
