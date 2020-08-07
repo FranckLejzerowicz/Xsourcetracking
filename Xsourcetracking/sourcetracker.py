@@ -42,8 +42,6 @@ def run_sourcetracker(
             r_meta = get_timechunk_meta(chunk, sink, sources, samples, n_sources, 'sourcetracker')
 
             map_out = '%s/map.t%s.c%s.tsv' % (o_dir_path_meth, t, cdx)
-            print("map_out")
-            print(map_out)
             r_meta['#SampleID'] = 's' + r_meta['#SampleID']
             r_meta.to_csv(map_out, index=False, sep='\t')
 
@@ -82,6 +80,6 @@ def run_sourcetracker(
             cmd += ' --jobs %s' % cur_p_cpus
             cmd += ' -o %s/\n' % o_dir_path_meth_loo
 
-            # cmd += 'rm -rf %s %s %s %s\n' % (cur_qza, cur_biom, map_out, cur)
+            cmd += 'rm -rf %s %s %s %s\n' % (cur_qza, cur_biom, map_out, cur)
 
     return cmd
