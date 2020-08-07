@@ -42,7 +42,6 @@ def run_sourcetracker(
             r_meta = get_timechunk_meta(chunk, sink, sources, samples, n_sources, 'sourcetracker')
 
             map_out = '%s/map.t%s.c%s.tsv' % (o_dir_path_meth, t, cdx)
-            r_meta['#SampleID'] = 's' + r_meta['#SampleID']
             r_meta.to_csv(map_out, index=False, sep='\t')
 
             cur = '%s/tab.t%s.c%s' % (o_dir_path_meth, t, cdx)
