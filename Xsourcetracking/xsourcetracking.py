@@ -51,11 +51,11 @@ def xsourcetracking(
         run: bool):
 
     # check and read input table
-    i_table, tab = check_input_table(i_table, verbose, p_method)
+    i_table, tab = check_input_table(i_table, verbose)
 
     # read metadata and collect sink / sources
     metadata, column_name, sources, sink = get_metadata(
-        m_metadata, p_column_name, p_sources, p_sink, verbose, meth)
+        m_metadata, p_column_name, p_sources, p_sink, verbose, p_method)
 
     # filter for command line params
     tab, o_dir_path = get_filtered(
@@ -79,7 +79,7 @@ def xsourcetracking(
                                                   sources, p_sources, p_method)
 
     # write data to be used
-    tab_out = write_data_table(tab, samples, o_dir_path, raref)
+    tab_out = write_data_table(tab, samples, o_dir_path, raref, p_method)
 
     if p_method == 'feast':
         cmd = run_feast(

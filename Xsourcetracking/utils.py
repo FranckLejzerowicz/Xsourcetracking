@@ -11,13 +11,19 @@ import pandas as pd
 from os.path import abspath, isdir, isfile
 
 
-def write_data_table(tab, samples, o_dir_path, raref):
-    tab_out = '%s/tab%s.tsv' % (o_dir_path, raref)
+def write_data_table(tab, samples, o_dir_path, raref, meth):
+
+    if meth == 'sourcetracker':
+        tab_out = '%s/tab%s_st.tsv' % (o_dir_path, raref)
+    else:
+        tab_out = '%s/tab%s.tsv' % (o_dir_path, raref)
     all_samples = set([s for sam in samples.values() for s in sam])
     if not isfile(tab_out):
         tab = tab[list(all_samples)]
         tab_reset = tab.reset_index()
         tab_reset = tab_reset.rename(columns={tab_reset.columns.tolist()[0]: 'featureid'})
+        if meth == 'sourcetracker':
+            tab_reset.columns = ['s%s' % x for x in tab_reset.columns]
         tab_reset.to_csv(tab_out, index=False, sep='\t')
     return tab_out
 
@@ -77,15 +83,13 @@ def get_o_dir_paths(o_dir_path, column_name, sink,
     return o_dir_path, o_dir_path_meth
 
 
-def check_input_table(i_table: str, verbose: bool, meth: str) -> (str, pd.DataFrame):
+def check_input_table(i_table: str, verbose: bool) -> (str, pd.DataFrame):
     i_table = abspath(i_table)
     if not isfile(i_table):
         raise IOError("No input table found at %s" % i_table)
     if verbose:
         print('read')
     tab = pd.read_csv(i_table, header=0, index_col=0, sep='\t')
-    if meth == 'sourcetracker':
-        tab.columns = ['s%s' % x for x in tab.columns]
     return i_table, tab
 
 
@@ -99,8 +103,6 @@ def get_metadata(m_metadata: str, p_column_name: str,
             break
     metadata = pd.read_csv(m_metadata, header=0, sep='\t', dtype={line.split('\t')[0]: str})
     metadata = metadata.rename(columns={metadata.columns.tolist()[0]: 'sample_name'})
-    if meth == 'sourcetracker':
-        metadata['sample_name'] = ['s%s' % x for x in metadata['sample_name']]
     metadata.columns = [x.replace('\n', '') for x in metadata.columns]
     if p_column_name not in metadata.columns.tolist()[1:]:
         raise IOError('"%s" not in "%s"' % (p_column_name, m_metadata))
