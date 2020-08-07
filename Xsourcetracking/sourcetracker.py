@@ -43,8 +43,8 @@ def run_sourcetracker(
             r_meta = get_timechunk_meta(chunks[0], sink, sources, samples, n_sources, 'sourcetracker')
             r_meta = pd.concat([
                 r_meta,
-                pd.DataFrame([[sam, sink, 'source'] for sam in chunks[1]],
-                             columns=['#SampleID', 'Env', 'SourceSink'])
+                pd.DataFrame([[sam, 'source', sink] for sam in chunks[1]],
+                             columns=['#SampleID', 'SourceSink', 'Env'])
             ])
             map_out = '%s/map.t%s.r%s.tsv' % (o_dir_path_meth, t, r)
             r_meta.to_csv(map_out, index=False, sep='\t')
