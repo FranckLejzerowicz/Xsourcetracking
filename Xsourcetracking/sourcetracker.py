@@ -36,6 +36,12 @@ def run_sourcetracker(
     for t in range(p_times):
         chunks_set = get_chunks(samples, sink, p_chunks, p_size)
         for r in range(len(chunks_set)):
+
+            o_dir_path_meth_t = o_dir_path_meth + '/t%s' % t
+            if isdir(o_dir_path_meth_t):
+                subprocess.call(['rm', '-rf', o_dir_path_meth_t])
+            os.makedirs(o_dir_path_meth_t)
+
             chunks = chunks_set[(r+1):] + chunks_set[:(r+1)]
             chunks = [chunks[0], [c for chunk in chunks[1:] for c in chunk]]
 
@@ -46,17 +52,12 @@ def run_sourcetracker(
                 pd.DataFrame([[sam, 'source', sink] for sam in chunks[1]],
                              columns=['#SampleID', 'SourceSink', 'Env'])
             ])
-            map_out = '%s/map.t%s.r%s.tsv' % (o_dir_path_meth, t, r)
+            map_out = '%s/map.r%s.tsv' % (o_dir_path_meth_t, r)
             r_meta.to_csv(map_out, index=False, sep='\t')
 
             cur_p_cpus = p_cpus
             if p_cpus > len(chunks[0]):
                 cur_p_cpus = len(chunks[0])
-
-            o_dir_path_meth_loo = o_dir_path_meth + '/t%s' % t
-            if isdir(o_dir_path_meth_loo):
-                subprocess.call(['rm', '-rf', o_dir_path_meth_loo])
-            os.makedirs(o_dir_path_meth_loo)
 
             cmd += 'sourcetracker2'
             cmd += ' -i %s' % biom
@@ -68,7 +69,7 @@ def run_sourcetracker(
                 cmd += ' --burnin %s' % p_iterations_burnins
             # cmd += ' --loo'
             cmd += ' --jobs %s' % cur_p_cpus
-            cmd += ' -o %s/r%s\n' % (o_dir_path_meth_loo, r)
+            cmd += ' -o %s/r%s\n' % (o_dir_path_meth_t, r)
 
             # cmd += 'rm -rf %s\n' % map_out
 
