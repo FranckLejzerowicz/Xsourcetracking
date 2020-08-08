@@ -66,7 +66,7 @@ def run_sourcetracker(
                 cmd += ' --sink_rarefaction_depth %s' % p_rarefaction
             if p_iterations_burnins:
                 cmd += ' --burnin %s' % p_iterations_burnins
-            cmd += ' --loo'
+            # cmd += ' --loo'
             cmd += ' --jobs %s' % cur_p_cpus
             cmd += ' -o %s/r%s\n' % (o_dir_path_meth_loo, r)
 
