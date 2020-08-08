@@ -34,13 +34,13 @@ def run_sourcetracker(
     if not isfile(biom):
         cmd += 'biom convert -i %s -o %s --to-hdf5 --table-type="OTU table"\n' % (tab_out, biom)
     for t in range(p_times):
+
+        o_dir_path_meth_t = o_dir_path_meth + '/t%s' % t
+        if not isdir(o_dir_path_meth_t):
+            os.makedirs(o_dir_path_meth_t)
+
         chunks_set = get_chunks(samples, sink, p_chunks, p_size)
         for r in range(len(chunks_set)):
-
-            o_dir_path_meth_t = o_dir_path_meth + '/t%s' % t
-            if isdir(o_dir_path_meth_t):
-                subprocess.call(['rm', '-rf', o_dir_path_meth_t])
-            os.makedirs(o_dir_path_meth_t)
 
             chunks = chunks_set[(r+1):] + chunks_set[:(r+1)]
             chunks = [chunks[0], [c for chunk in chunks[1:] for c in chunk]]
@@ -59,6 +59,10 @@ def run_sourcetracker(
             if p_cpus > len(chunks[0]):
                 cur_p_cpus = len(chunks[0])
 
+            o_dir_path_meth_t_r = o_dir_path_meth_t + '/r%s' % r
+            if isdir(o_dir_path_meth_t_r):
+                subprocess.call(['rm', '-rf', o_dir_path_meth_t_r])
+
             cmd += 'sourcetracker2'
             cmd += ' -i %s' % biom
             cmd += ' -m %s' % map_out
@@ -69,7 +73,7 @@ def run_sourcetracker(
                 cmd += ' --burnin %s' % p_iterations_burnins
             # cmd += ' --loo'
             cmd += ' --jobs %s' % cur_p_cpus
-            cmd += ' -o %s/r%s\n' % (o_dir_path_meth_t, r)
+            cmd += ' -o %s\n' % o_dir_path_meth_t_r
 
             # cmd += 'rm -rf %s\n' % map_out
 
