@@ -29,7 +29,7 @@ def run_sourcetracker(
         p_cpus: int,
         p_times: int) -> str:
 
-    cmd = 'conda activate st2\n'
+    cmd = 'source activate st2\n'
     biom = '%s.biom' % splitext(tab_out)[0]
     if not isfile(biom):
         cmd += 'biom convert -i %s -o %s --to-hdf5 --table-type="OTU table"\n' % (tab_out, biom)

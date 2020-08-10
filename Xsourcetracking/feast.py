@@ -83,5 +83,5 @@ def run_feast(
                 r_o.write('FEAST(C=feat, metadata=meta, dir_path="%s", outfile="out.r%s"%s)\n' % (
                     o_dir_path_meth_t, r, params))
 
-    cmd = 'conda activate feast\nR -f %s --vanilla' % r_script
+    cmd = 'source activate feast\nR -f %s --vanilla' % r_script
     return cmd
