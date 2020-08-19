@@ -9,6 +9,7 @@
 import os
 import subprocess
 import pandas as pd
+import numpy as np
 from os.path import isdir
 
 from Xsourcetracking.utils import get_chunks
@@ -64,7 +65,7 @@ def run_feast(
                 r_meta = get_timechunk_meta(chunks[0], sink, sources, samples, n_sources, 'feast')
                 r_meta = pd.concat([
                     r_meta,
-                    pd.DataFrame([[sam, sink, 'Source', len(sources)] for sam in chunks[1]],
+                    pd.DataFrame([[sam, sink, 'Source', 'NA'] for sam in chunks[1]],
                                  columns=['SampleID', 'Env', 'SourceSink', 'id'])
                 ])
                 map_out = '%s/map.r%s.tsv' % (o_dir_path_meth_t, r)

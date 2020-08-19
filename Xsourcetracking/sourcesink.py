@@ -8,6 +8,7 @@
 
 import random
 import pandas as pd
+import numpy as np
 
 
 def get_chunk_nsources(chunk, sources, counts):
@@ -35,7 +36,7 @@ def get_timechunk_meta(chunk, sink, sources, samples, n_sources, meth):
         for sadx, sam in enumerate(random.sample(samples[source], n_sources[source])):
             if meth == 'feast':
                 # r_meta_list.append([sam, '%s %s' % (source, (sadx + 1)), 'Source', sodx])
-                r_meta_list.append([sam, source, 'Source', sodx])
+                r_meta_list.append([sam, source, 'Source', 'NA'])
             elif meth == 'sourcetracker':
                 r_meta_list.append([sam, 'source', source])
                 # r_meta_list.append([sam, 'source', '%s %s' % (source, (sadx + 1))])

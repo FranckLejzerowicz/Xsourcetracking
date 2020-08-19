@@ -40,7 +40,7 @@ def run_q2classifier(
         chunks_set = get_chunks(samples, sink, p_chunks, p_size)
         for r in range(len(chunks_set)):
             chunks = chunks_set[(r+1):] + chunks_set[:(r+1)]
-            chunks = [chunks[0], [c for chunk in chunks[1:] for c in chunk]]
+            chunks = [[c for chunk in chunks[1:] for c in chunk], chunks[0]]
             for cdx, chunk in enumerate(chunks):
 
                 cur_p_cpus = p_cpus
