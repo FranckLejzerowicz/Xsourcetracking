@@ -91,6 +91,8 @@ def run_q2classifier(
                 ]:
 
                     o_dir_path_meth_est = o_dir_path_meth_tr + '/%s' % estimator
+                    if isfile('%s/predictions.tsv' % o_dir_path_meth_est):
+                        continue
                     if isdir(o_dir_path_meth_est):
                         subprocess.call(['rm', '-rf', o_dir_path_meth_est])
                     os.makedirs(o_dir_path_meth_est)
@@ -153,6 +155,6 @@ def run_q2classifier(
                         cmd += 'tail -n 3 %s/predictive_accuracy.tsv > %s.tsv\n' % (accuracy_results_d, accuracy_results_d)
 
                         cmd += 'rm -rf %s %s %s %s %s\n' % (feature_importance, predictions, probabilities,
-                                                          accuracy_results, accuracy_results_d)
+                                                            accuracy_results, accuracy_results_d)
                 cmd += 'rm -rf %s %s\n' % (map_out, cur_qza)
     return cmd

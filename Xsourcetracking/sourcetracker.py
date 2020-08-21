@@ -60,6 +60,8 @@ def run_sourcetracker(
                 cur_p_cpus = len(chunks[0])
 
             o_dir_path_meth_t_r = o_dir_path_meth_t + '/r%s' % r
+            if isfile('%s/mixing_proportions.tsv' % o_dir_path_meth_t_r):
+                continue
             if isdir(o_dir_path_meth_t_r):
                 subprocess.call(['rm', '-rf', o_dir_path_meth_t_r])
 
