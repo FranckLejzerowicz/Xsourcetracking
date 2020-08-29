@@ -62,8 +62,6 @@ def get_rarefaction(tab, p_rarefaction):
     if p_rarefaction:
         raref = '_raref%s' % p_rarefaction
         tab = tab.loc[:, tab.sum() > p_rarefaction]
-    else:
-        tab = tab.loc[:, tab.sum() > 1000]
     return tab, raref
 
 
