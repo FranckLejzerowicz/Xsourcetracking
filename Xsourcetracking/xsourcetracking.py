@@ -47,8 +47,9 @@ def xsourcetracking(
         p_chunks: int,
         p_times: int,
         diff_sources: bool,
-        verbose: bool,
-        run: bool):
+        run: bool,
+        loo: bool,
+        verbose: bool):
 
     # check and read input table
     i_table, tab = check_input_table(i_table, verbose)
@@ -109,7 +110,8 @@ def xsourcetracking(
             p_iterations_burnins,
             p_rarefaction,
             p_cpus,
-            p_times
+            p_times,
+            loo
         )
     elif p_method == 'q2':
         cmd = run_q2classifier(

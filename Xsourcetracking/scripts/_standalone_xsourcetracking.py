@@ -102,21 +102,25 @@ from Xsourcetracking import __version__
     help="[feast/sourcetracker] number of times to make selections."
 )
 @click.option(
-    "--diff-sources", "--no-diff-sources", default=False,
+    "--diff-sources/--no-diff-sources", default=False,
     help="[feast] Indicate the source-sink assignment. "
          "Set if different sources are assigned "
          "to each sink, do not set otherwise."
 )
 @click.option(
-    "--run", "--no-run", default=False,
+    "--run/--no-run", default=False,
     help="Whether the commands should be run "
          "(e.g. or to be used by a third party handler)"
+)
+@click.option(
+    "--loo/--no-loo", default=False,
+    help="Whether to run st2 with --loo (leave-one-out) option on (no split)"
 )
 @click.option(
     "--verbose/--no-verbose", default=False
 )
 @click.version_option(__version__, prog_name="Xsourcetracking")
-def standalone_xsourcetracking  (
+def standalone_xsourcetracking(
         i_table,
         o_dir_path,
         m_metadata,
@@ -137,9 +141,9 @@ def standalone_xsourcetracking  (
         p_chunks,
         p_times,
         diff_sources,
-        verbose,
-        run
-):
+        run,
+        loo,
+        verbose):
 
     xsourcetracking(
         i_table,
@@ -162,8 +166,9 @@ def standalone_xsourcetracking  (
         p_chunks,
         p_times,
         diff_sources,
-        verbose,
-        run
+        run,
+        loo,
+        verbose
     )
 
 
