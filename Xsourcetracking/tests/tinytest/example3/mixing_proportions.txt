@@ -1,5 +1,0 @@
-	drainwater	seawater	sewage
-drainwater	0.0	0.4644	0.4045
-seawater	0.5615	0.0	0.475
-sewage	0.3403	0.4492	0.0
-Unknown	0.0982	0.0864	0.1205
