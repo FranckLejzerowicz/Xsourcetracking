@@ -12,77 +12,57 @@ import pandas as pd
 import numpy as np
 from os.path import isdir
 
-from Xsourcetracking.utils import get_chunks
-from Xsourcetracking.sourcesink import get_chunk_nsources, get_timechunk_meta
+from Xsourcetracking.utils import (
+    get_chunks_set, get_chunks, make_dirs, write_cur_meta)
 
 
-def get_params(p_iterations_burnins, p_rarefaction, diff_sources):
-    params = ''
-    if p_iterations_burnins:
-        params += ', EM_iterations=%s' % p_iterations_burnins
-    if p_rarefaction:
-        params += ', COVERAGE=%s' % p_rarefaction
-    if diff_sources:
-        params += ', different_sources_flag=1'
+def get_feast_params(params):
+    ps = ''
+    if params.get('EM_iterations'):
+        ps += ', EM_iterations=%s' % params['EM_iterations']
+    if params.get('coverage'):
+        ps += ', COVERAGE=%s' % params['coverage']
+    if params.get('diff_src'):
+        ps += ', different_sources_flag=1'
     else:
-        params += ', different_sources_flag=0'
-    return params
+        ps += ', different_sources_flag=0'
+    return ps
 
 
 def run_feast(
-        tab_out: str,
-        o_dir_path_meth: str,
+        i: str,
+        o: str,
         samples: dict,
         counts: dict,
         sources: tuple,
         sink: str,
-        p_size: int,
         p_chunks: int,
-        p_iterations_burnins: int,
-        p_rarefaction: int,
-        diff_sources: bool,
-        p_times: int) -> str:
+        params: dict
+) -> str:
 
-    params = get_params(p_iterations_burnins, p_rarefaction, diff_sources)
-    r_script = '%s/run_feast.R' % o_dir_path_meth
+    ps = get_feast_params(params)
+    r_script = '%s/run_feast.R' % o
     with open(r_script, 'w') as r_o:
         r_o.write('library(FEAST)\n')
-        r_o.write('feats_full <- Load_CountMatrix(CountMatrix_path="%s")\n' % tab_out)
-        for t in range(p_times):
-
-            o_dir_path_meth_t = o_dir_path_meth + '/t%s' % t
-            if isdir(o_dir_path_meth_t):
-                subprocess.call(['rm', '-rf', o_dir_path_meth_t])
-            os.makedirs(o_dir_path_meth_t)
-
-            chunks_set = get_chunks(samples, sink, p_chunks, p_size)
+        r_o.write('feats_full <- Load_CountMatrix(CountMatrix_path="%s")\n' % i)
+        for t in range(params['times']):
+            o_dir = make_dirs(o, t)
+            chunks_set = get_chunks_set(samples, sink, p_chunks, params['size'])
             for r in range(len(chunks_set)):
-
-                chunks = chunks_set[(r + 1):] + chunks_set[:(r + 1)]
-                chunks = [chunks[0], [c for chunk in chunks[1:] for c in chunk]]
-
-                n_sources = get_chunk_nsources(chunks[0], sources, counts)
-                r_meta = get_timechunk_meta(chunks[0], sink, sources, samples, n_sources, 'feast')
-                r_meta = pd.concat([
-                    r_meta,
-                    pd.DataFrame([[sam, sink, 'Source', 'NA'] for sam in chunks[1]],
-                                 columns=['SampleID', 'Env', 'SourceSink', 'id'])
-                ])
-                map_out = '%s/map.r%s.tsv' % (o_dir_path_meth_t, r)
-                r_meta.to_csv(map_out, index=False, sep='\t')
-
-                sams = '","'.join(r_meta['SampleID'].tolist())
+                chunks = get_chunks(chunks_set, r)
+                _, map_pd = write_cur_meta(
+                    o_dir, chunks, sources, sink, counts, samples, 'feast', r)
+                sams = '","'.join(map_pd['SampleID'].tolist())
+                df = 'Env=c("%s"), SourceSink=c("%s"), id=c(%s)' % (
+                    '","'.join(map_pd['Env'].tolist()),
+                    '","'.join(map_pd['SourceSink'].tolist()),
+                    ','.join(map(str, map_pd['id'].tolist())))
+                cmd = 'dir_path="%s", outfile="out.r%s"%s' % (o_dir, r, ps)
                 r_o.write('samples <- c("%s")\n' % sams)
-                r_o.write('meta <- data.frame(Env=c("%s"), SourceSink=c("%s"), id=c(%s))\n' % (
-                    '","'.join(r_meta['Env'].tolist()),
-                    '","'.join(r_meta['SourceSink'].tolist()),
-                    ','.join(map(str, r_meta['id'].tolist())),
-                ))
+                r_o.write('meta <- data.frame(%s)\n' % df)
                 r_o.write('rownames(meta) <- samples\n')
-                r_o.write('feat <- feats_full[samples,]\n' % ())
-                r_o.write('feat <- feats_full[,colSums(feats_full)>0]\n' % ())
-                r_o.write('FEAST(C=feat, metadata=meta, dir_path="%s", outfile="out.r%s"%s)\n' % (
-                    o_dir_path_meth_t, r, params))
-
-    cmd = 'source activate feast\nR -f %s --vanilla' % r_script
+                r_o.write('feat <- feats_full[samples,]\n')
+                r_o.write('feat <- feats_full[,colSums(feats_full)>0]\n')
+                r_o.write('FEAST(C=feat, metadata=meta, %s)\n' % cmd)
+    cmd = 'R -f %s --vanilla' % r_script
     return cmd

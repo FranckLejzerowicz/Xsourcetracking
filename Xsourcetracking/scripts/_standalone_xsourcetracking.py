@@ -72,17 +72,9 @@ from Xsourcetracking import __version__
          "for labeling check (default to all factors except that passed to `-si`)."
 )
 @click.option(
-    "-n", "--p-iterations-burnins", required=False, type=int,
-    default=None, help="[feast] number of EM iterations,"
-                       "[sourcetracker] number of burn-ins."
-)
-@click.option(
-    "-r", "--p-rarefaction", required=False, type=int,
-    default=None, help="[feast/sourcetracker] rarefaction depth."
-)
-@click.option(
     "-meth", "--p-method", required=False, default='feast',
-    type=click.Choice(['feast', 'sourcetracker', 'q2', 'metastorms', 'classify']),
+    type=click.Choice([
+        'feast', 'sourcetracker', 'q2_classifier', 'metastorms', 'classify']),
     help="Method for labeling check."
 )
 @click.option(
@@ -90,31 +82,12 @@ from Xsourcetracking import __version__
     help="[sourcetracker] Number of cpus/jobs."
 )
 @click.option(
-    "-s", "--p-size", required=False, default=None, type=float,
-    help="Percent / Number of samples per prediction."
-)
-@click.option(
     "-h", "--p-chunks", required=False, default=None, type=int,
     help="Number of chunks to split the sink samples into."
 )
 @click.option(
-    "-t", "--p-times", required=False, type=int, default=1,
-    help="[feast/sourcetracker] number of times to make selections."
-)
-@click.option(
-    "--diff-sources/--no-diff-sources", default=False,
-    help="[feast] Indicate the source-sink assignment. "
-         "Set if different sources are assigned "
-         "to each sink, do not set otherwise."
-)
-@click.option(
-    "--run/--no-run", default=False,
-    help="Whether the commands should be run "
-         "(e.g. or to be used by a third party handler)"
-)
-@click.option(
-    "--loo/--no-loo", default=False,
-    help="Whether to run st2 with --loo (leave-one-out) option on (no split)"
+    "-st2", "--p-st2-config", required=False, default=None,
+    help="Config for Sourcetracker2 (yaml file)"
 )
 @click.option(
     "--verbose/--no-verbose", default=False
@@ -133,16 +106,10 @@ def standalone_xsourcetracking(
         p_column_name,
         p_sources,
         p_sink,
-        p_iterations_burnins,
-        p_rarefaction,
         p_method,
         p_cpus,
-        p_size,
         p_chunks,
-        p_times,
-        diff_sources,
-        run,
-        loo,
+        p_st2_config,
         verbose):
 
     xsourcetracking(
@@ -158,16 +125,10 @@ def standalone_xsourcetracking(
         p_column_name,
         p_sources,
         p_sink,
-        p_iterations_burnins,
-        p_rarefaction,
         p_method,
         p_cpus,
-        p_size,
         p_chunks,
-        p_times,
-        diff_sources,
-        run,
-        loo,
+        p_st2_config,
         verbose
     )
 

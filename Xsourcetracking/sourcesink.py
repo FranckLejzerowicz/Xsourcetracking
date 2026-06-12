@@ -23,30 +23,30 @@ def get_chunk_nsources(chunk, sources, counts):
     return n_sources
 
 
-def get_timechunk_meta(chunk, sink, sources, samples, n_sources, meth):
+def get_timechunk_meta(chunk, sink, sources, samples, n_sources, tool):
     r_meta_list = []
     for sdx, sam in enumerate(chunk):
-        if meth == 'feast':
+        if tool == 'feast':
             r_meta_list.append([sam, '%s%s' % (sink, (sdx + 1)), 'Sink', (sdx + 1)])
-        elif meth == 'sourcetracker':
+        elif tool == 'sourcetracker':
             r_meta_list.append([sam, 'sink', '%s%s' % (sink, (sdx + 1))])
-        elif meth == 'q2':
+        elif tool == 'q2':
             r_meta_list.append([sam, sink])
     for sodx, source in enumerate(sources):
         for sadx, sam in enumerate(random.sample(samples[source], n_sources[source])):
-            if meth == 'feast':
+            if tool == 'feast':
                 # r_meta_list.append([sam, '%s %s' % (source, (sadx + 1)), 'Source', sodx])
                 r_meta_list.append([sam, source, 'Source', 'NA'])
-            elif meth == 'sourcetracker':
+            elif tool == 'sourcetracker':
                 r_meta_list.append([sam, 'source', source])
                 # r_meta_list.append([sam, 'source', '%s %s' % (source, (sadx + 1))])
-            elif meth == 'q2':
+            elif tool == 'q2':
                 r_meta_list.append([sam, source])
-    if meth == 'feast':
+    if tool == 'feast':
         r_meta = pd.DataFrame(r_meta_list, columns=['SampleID', 'Env', 'SourceSink', 'id'])
-    elif meth == 'sourcetracker':
+    elif tool == 'sourcetracker':
         r_meta = pd.DataFrame(r_meta_list, columns=['#SampleID', 'SourceSink', 'Env'])
-    elif meth == 'q2':
+    elif tool == 'q2':
         r_meta = pd.DataFrame(r_meta_list, columns=['#SampleID', 'Env'])
     return r_meta
 
@@ -70,7 +70,8 @@ def get_sink_samples_chunks(samples, sink, p_size, p_chunks):
     return sink_samples_chunks_final
 
 
-def get_sourcesink_dict(metadata, column_name, sink, sources):
+def get_sourcesink(metadata, column_name, sink, sources):
+    print('Getting source-sink config...', end=' ')
     counts = metadata[column_name].value_counts().to_dict()
     samples = {sink: metadata.loc[metadata[column_name] == sink, :].index.tolist()}
     for source in sources:
@@ -79,4 +80,5 @@ def get_sourcesink_dict(metadata, column_name, sink, sources):
             continue
         samples.update({source: metadata.loc[metadata[column_name] == source, :].index.tolist()})
     sources = [x for x in sources if x in counts]
+    print('done.')
     return samples, counts, sources

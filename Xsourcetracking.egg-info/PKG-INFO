@@ -1,0 +1,58 @@
+Metadata-Version: 2.1
+Name: Xsourcetracking
+Version: 0.1
+Home-page: https://github.com/FranckLejzerowicz/Xsourcetracking
+Author: Franck Lejzerowicz
+Author-email: franck.lejzerowicz@gmail.com
+Maintainer: Franck Lejzerowicz
+Maintainer-email: franck.lejzerowicz@gmail.com
+License: BSD
+Classifier: License :: OSI Approved :: BSD License
+Classifier: Topic :: Scientific/Engineering
+Classifier: Topic :: Scientific/Engineering :: Bio-Informatics
+Classifier: Programming Language :: Python :: 3.5
+Classifier: Programming Language :: Python :: 3 :: Only
+Classifier: Operating System :: Unix
+Classifier: Operating System :: POSIX
+Classifier: Operating System :: MacOS :: MacOS X
+Requires-Python: >=3.5
+Description-Content-Type: text/markdown
+License-File: LICENCE
+
+# Xsourcetracking
+
+Run FEAST, sourcetracker2 or ML classification for a features table, metadata and metadata column's sink 
+(and sources) to help identifying most likely features origin and curate sample labeling.
+
+## Installation
+
+```
+pip install -U git+https://github.com/FranckLejzerowicz/Xsourcetracking.git
+```
+
+#### Requisites
+* python >= 3.5
+* [FEAST](https://github.com/cozygene/FEAST) (R install)
+* [sourcetracker2](https://github.com/biota/sourcetracker2) (python install)
+* [scikit-learn]()
+
+## Input
+    
+
+## Outputs
+
+
+
+## Example
+
+
+## Visualization
+
+### Optional arguments
+
+```
+```
+
+### Bug Reports
+
+contact `flejzerowicz@health.ucsd.edu`

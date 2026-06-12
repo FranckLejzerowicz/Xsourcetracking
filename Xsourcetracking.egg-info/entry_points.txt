@@ -1,0 +1,2 @@
+[console_scripts]
+Xsourcetracking = Xsourcetracking.scripts._standalone_xsourcetracking:standalone_xsourcetracking

@@ -1,0 +1,26 @@
+abundance: null
+alpha1: 0.001
+alpha2: 0.001
+beta: 10
+burnin: 100
+estimators:
+- RandomForestClassifier
+- GradientBoostingClassifier
+- AdaBoostClassifier
+- LinearSVC
+cluster_start_delay: 25
+coverage: null
+cpus: 1
+delay: 10
+diff_src: false
+draws_per_restart: 1
+iterations: 10
+loo: false
+order: meta-filter
+prevalence: null
+restarts: 10
+run: true
+sink_rarefaction_depth: 0
+size: 1
+source_rarefaction_depth: 0
+times: 1

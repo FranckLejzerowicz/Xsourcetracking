@@ -165,6 +165,7 @@ def get_filtered(p_column: str, p_column_value, p_filter_prevalence,
     message = 'input'
     if p_column:
         if p_column_value or p_filter_prevalence or p_filter_abundance or p_column_quant:
+            print('Filtering...', end=' ')
             tab = do_filter(tab, metadata, p_filter_prevalence,
                             p_filter_abundance, p_filter_order,
                             p_column, p_column_value, p_column_quant)
@@ -178,6 +179,7 @@ def get_filtered(p_column: str, p_column_value, p_filter_prevalence,
                 o_dir_path = o_dir_path + '_a-' + str(p_filter_abundance)
             if p_filter_prevalence:
                 o_dir_path = o_dir_path + '_q-' + str(p_column_quant)
+            print('done.')
     if tab.shape[0] < 10:
         raise IOError('Too few features in the %s table' % message)
     if not isdir(o_dir_path):
