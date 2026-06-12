@@ -2,7 +2,7 @@
 
 **Xsourcetracking** is a Python command-line tool for microbial source tracking and sample label curation. Given a feature (OTU/ASV) table, a sample metadata file, and a metadata column that distinguishes sink samples from source samples, it orchestrates one of several statistical or machine-learning methods to estimate the most likely origin of features in each sink sample.
 
-It wraps FEAST, sourcetracker2, QIIME 2's classify-samples, and (experimentally) metastorms and scikit-learn classifiers into a single, consistent CLI interface.
+It wraps FEAST, QIIME 2's classify-samples, and (experimentally) metastorms and scikit-learn classifiers into a single, consistent CLI interface.
 
 ---
 
@@ -44,7 +44,6 @@ pip install -U git+https://github.com/FranckLejzerowicz/Xsourcetracking.git
 | Method | Dependency | Notes |
 |---|---|---|
 | `feast` | [FEAST](https://github.com/cozygene/FEAST) | R package; activate via `conda activate feast` |
-| `sourcetracker` | [sourcetracker2](https://github.com/biota/sourcetracker2) | Python; activate via `conda activate st2` |
 | `q2` | QIIME 2 with `sample-classifier` plugin | — |
 | `classify` | scikit-learn >= 0.22.2 | installed automatically |
 | `metastorms` | scikit-learn >= 0.22.2 | experimental; not fully implemented |
@@ -81,8 +80,6 @@ ASV_002     0         300       10
 ```
 
 The file must be tab-delimited. BIOM files are not accepted directly as input; convert to TSV first (`biom convert -i table.biom -o table.tsv --to-tsv`).
-
-For sourcetracker2, the tool itself converts the TSV to BIOM internally before running the method.
 
 ### Metadata table (`-m` / `--m-metadata`)
 
@@ -128,10 +125,6 @@ If metadata-based filtering is applied (`-fc`, `-fv`, `-fq`), an additional subd
 - `out.rR_FEAST_output.txt` — mixing proportions per sink sample
 - `out.rR_FEAST.log` — R log
 
-**sourcetracker2** (`sourcetracker/tN/rR/` or `sourcetracker/tN/loo/`):
-- `mixing_proportions.tsv` — proportion of each sink attributed to each source
-- `mixing_proportions_stds.tsv` — standard deviations
-
 **q2 / QIIME 2 classifier** (`q2/tN/`):
 - Standard QIIME 2 classify-samples outputs
 
@@ -157,7 +150,7 @@ Xsourcetracking [OPTIONS]
 
 | Flag | Long form | Default | Choices | Description |
 |---|---|---|---|---|
-| `-meth` | `--p-method` | `feast` | `feast`, `sourcetracker`, `q2`, `metastorms`, `classify` | Source-tracking method to use. |
+| `-meth` | `--p-method` | `feast` | `feast`, `q2`, `metastorms`, `classify` | Source-tracking method to use. |
 
 ### Source definition
 
@@ -169,11 +162,10 @@ Xsourcetracking [OPTIONS]
 
 | Flag | Long form | Default | Description |
 |---|---|---|---|
-| `-n` | `--p-iterations-burnins` | None | For FEAST: number of EM iterations. For sourcetracker2: number of burn-in steps. |
+| `-n` | `--p-iterations-burnins` | None | For FEAST: number of EM iterations.
 | `-r` | `--p-rarefaction` | None | Rarefaction depth. Samples with fewer reads are excluded. Appended to output table filename. |
-| `-j` | `--p-cpus` | `1` | Number of parallel jobs (sourcetracker2 and q2). |
+| `-j` | `--p-cpus` | `1` | Number of parallel jobs. |
 | `--diff-sources` / `--no-diff-sources` | | `--no-diff-sources` | FEAST only. Set if each sink uses a different set of source samples (`different_sources_flag=1`). |
-| `--loo` / `--no-loo` | | `--no-loo` | sourcetracker2 only. Run in leave-one-out mode (no sink/source split). |
 
 ### Execution
 
@@ -212,14 +204,6 @@ Xsourcetracking [OPTIONS]
 Xsourcetracking generates an R script (`run_feast.R`) that calls `FEAST()` and writes it inside the method output directory, then wraps the invocation in a shell script using `source activate feast`.
 
 Relevant parameters: `-n` (EM iterations), `-r` (coverage / rarefaction), `--diff-sources`.
-
-### sourcetracker2 (`-meth sourcetracker`)
-
-[sourcetracker2](https://github.com/biota/sourcetracker2) is a Gibbs-sampling Bayesian source tracker. It requires a BIOM file; Xsourcetracking converts the TSV table automatically.
-
-The generated shell script activates the `st2` conda environment and calls `sourcetracker2` with the appropriate flags.
-
-Relevant parameters: `-n` (burn-in), `-r` (rarefaction depth), `-j` (jobs), `--loo` (leave-one-out).
 
 ### QIIME 2 classifier (`-meth q2`)
 
@@ -321,22 +305,6 @@ Xsourcetracking \
 
 Restricts sources to `soil` and `water`, rarefies to 5 000 reads, runs 1 000 EM iterations, repeats 5 times.
 
-### sourcetracker2 with leave-one-out
-
-```bash
-Xsourcetracking \
-  -i feature_table.tsv \
-  -m metadata.tsv \
-  -o results/ \
-  -c env_type \
-  -si indoor_air \
-  -meth sourcetracker \
-  -r 2000 \
-  -j 8 \
-  --loo \
-  --run
-```
-
 ### Filtered run (prevalence + metadata filter)
 
 ```bash
@@ -364,20 +332,16 @@ Keeps only samples from hosts older than 18, then removes features present at <5
 
 **Feature table format.** The table must be tab-separated with the feature identifier as the first column (named anything). Sample IDs must match between the table and the metadata. Mismatched samples are silently dropped at the intersection step.
 
-**Method environments.** FEAST and sourcetracker2 are expected to be available in conda environments named `feast` and `st2` respectively. If your environment names differ, edit the generated `.sh` script before running it (or use `--no-run` and call the script yourself).
-
 **Script vs execution.** By default (`--no-run`), Xsourcetracking only generates shell scripts. This is useful for cluster submission workflows where you want to inspect or schedule the jobs manually before running them.
 
 **Output directory naming.** The output path encodes the column name, sink label, and (if specified) the selected source labels. This means re-running with different source sets does not overwrite previous results.
 
 **metastorms and classify methods.** These modules contain incomplete implementations (stubs and commented-out code). They generate a shell script placeholder but may raise errors or produce no meaningful output.
 
-**Rarefaction.** The `-r` flag does not rarefy the table in a strict random-subsampling sense; it filters out samples below the specified depth (`tab.sum() > p_rarefaction`). Actual per-sample rarefaction is delegated to FEAST (via `COVERAGE=`) or sourcetracker2 (via `--source_rarefaction_depth` / `--sink_rarefaction_depth`).
-
 ---
 
 ## Bug reports
 
-Contact: `flejzerowicz@health.ucsd.edu`
+Contact: `franckl@uio.no`
 
 Or open an issue at https://github.com/FranckLejzerowicz/Xsourcetracking/issues
