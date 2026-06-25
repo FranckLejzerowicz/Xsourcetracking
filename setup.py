@@ -57,6 +57,7 @@ setup(
     ],
     classifiers=classifiers,
     entry_points={'console_scripts': standalone},
-    package_data={},
+    package_data={'Xsourcetracking': ['resources/defaults.yml']},
+    include_package_data=True,
     python_requires='>=3.5',
 )
