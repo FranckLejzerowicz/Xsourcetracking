@@ -20,7 +20,7 @@ from Xsourcetracking.utils import (
 )
 from Xsourcetracking.sourcesink import get_sourcesink
 from Xsourcetracking.feast import run_feast
-from Xsourcetracking.sourcetracker import run_sourcetracker
+# from Xsourcetracking.sourcetracker import run_sourcetracker
 from Xsourcetracking.metastorms import run_metastorms
 from Xsourcetracking.q2classifier import run_q2classifier
 
