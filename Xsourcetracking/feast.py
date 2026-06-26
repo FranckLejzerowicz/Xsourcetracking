@@ -48,11 +48,21 @@ def run_feast(
         for t in range(params['times']):
             o_dir = make_dirs(o, t)
             chunks_set = get_chunks_set(samples, sink, p_chunks, params['size'])
+            print()
+            print()
+            print()
+            print()
+            print("p_chunks, params['size']")
             print(p_chunks, params['size'])
+            print("len(chunks_set)")
             print(len(chunks_set))
+            print("chunks_set")
             print(chunks_set)
             for r in range(len(chunks_set)):
                 chunks = get_chunks(chunks_set, r)
+                print()
+                print("chunks")
+                print(chunks)
                 _, map_pd = write_cur_meta(
                     o_dir, chunks, sources, sink, counts, samples, 'feast', r)
                 sams = '","'.join(map_pd['SampleID'].tolist())
