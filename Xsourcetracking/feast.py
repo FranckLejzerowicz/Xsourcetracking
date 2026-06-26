@@ -48,6 +48,9 @@ def run_feast(
         for t in range(params['times']):
             o_dir = make_dirs(o, t)
             chunks_set = get_chunks_set(samples, sink, p_chunks, params['size'])
+            print(p_chunks, params['size'])
+            print(len(chunks_set))
+            print(chunks_set)
             for r in range(len(chunks_set)):
                 chunks = get_chunks(chunks_set, r)
                 _, map_pd = write_cur_meta(
