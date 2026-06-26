@@ -64,12 +64,14 @@ def xsourcetracking(
 
     # subset metadata to filtered samples
     meta = meta.set_index('sample_name').loc[tab.columns.tolist(), [col_name]]
+    # print(meta)
+    # print(meta.shape)
 
     # get list of samples per sink / sources
     samples, counts, sources = get_sourcesink(meta, col_name, sink, sources)
 
     if len(counts) == 1:
-        print('Not enough source(s) samples')
+        print('Not enough source(s) samples (< 5)')
         sys.exit(0)
 
     # create the output folder

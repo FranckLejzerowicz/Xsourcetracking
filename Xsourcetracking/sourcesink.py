@@ -53,8 +53,6 @@ def get_timechunk_meta(chunk, sink, sources, samples, n_sources, tool):
 
 def get_sink_samples_chunks(samples, sink, p_size, p_chunks):
     if p_chunks:
-        print(samples[sink])
-        print(p_chunks)
         sink_samples_chunks_final = chunks(samples[sink], p_chunks)
     elif p_size:
         if 0 < p_size < 1:
@@ -75,7 +73,7 @@ def get_sourcesink(metadata, column_name, sink, sources):
     counts = metadata[column_name].value_counts().to_dict()
     samples = {sink: metadata.loc[metadata[column_name] == sink, :].index.tolist()}
     for source in sources:
-        if counts[source] < 20:
+        if counts[source] < 5:
             del counts[source]
             continue
         samples.update({source: metadata.loc[metadata[column_name] == source, :].index.tolist()})

@@ -86,8 +86,8 @@ from Xsourcetracking import __version__
     help="Number of chunks to split the sink samples into."
 )
 @click.option(
-    "-st2", "--p-st2-config", required=False, default=None,
-    help="Config for Sourcetracker2 (yaml file)"
+    "-cfg", "--p-config", required=False, default=None,
+    help="Config (yaml file)"
 )
 @click.option(
     "--verbose/--no-verbose", default=False
@@ -109,7 +109,7 @@ def standalone_xsourcetracking(
         p_method,
         p_cpus,
         p_chunks,
-        p_st2_config,
+        p_config,
         verbose):
 
     xsourcetracking(
@@ -128,7 +128,7 @@ def standalone_xsourcetracking(
         p_method,
         p_cpus,
         p_chunks,
-        p_st2_config,
+        p_config,
         verbose
     )
 
