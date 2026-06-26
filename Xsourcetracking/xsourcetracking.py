@@ -41,11 +41,11 @@ def xsourcetracking(
         p_method: str,
         p_cpus: int,
         p_chunks: int,
-        p_st2_config: str,
+        p_config: str,
         verbose: bool):
 
     # read the config passed woith all per-tool options
-    params = get_params(p_st2_config)
+    params = get_params(p_config)
 
     # check and read input table
     i_table, tab = check_input_table(i_table, verbose)
